@@ -1,0 +1,207 @@
+{
+      "shape": [
+        {
+          "style": {
+            "position": {
+              "x": 22.0,
+              "y": 15.0
+            },
+            "if_absolute": false,
+            "size": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "rotate": 0.0,
+            "rotate_center": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "fill": [
+              0,
+              0,
+              0,
+              100
+            ],
+            "stroke": {
+              "width": 0.0,
+              "color": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "volume": {
+              "min": {
+                "x": 22.0,
+                "y": 15.0
+              },
+              "max": {
+                "x": 46.0,
+                "y": 45.0
+              }
+            },
+            "anchor": [
+              "Center",
+              "Center"
+            ],
+            "text_size": 12.0,
+            "layer": null
+          },
+          "shape": {
+            "Image": {
+              "name": "Test",
+              "first_path": "Chart",
+              "path": "Test/image.png",
+              "bottom_right_point": {
+                "x": 24.0,
+                "y": 13.5
+              },
+              "registered_info": null,
+              "if_keep": true
+            }
+          },
+          "if_delete": false,
+          "animation": [],
+          "label": [
+            "Image"
+          ]
+        },
+        {
+          "style": {
+            "position": {
+              "x": 22.0,
+              "y": 15.0
+            },
+            "if_absolute": false,
+            "size": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "rotate": 0.0,
+            "rotate_center": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "fill": [
+              0,
+              0,
+              0,
+              150
+            ],
+            "stroke": {
+              "width": 0.0,
+              "color": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "volume": {
+              "min": {
+                "x": 22.0,
+                "y": 15.0
+              },
+              "max": {
+                "x": 46.0,
+                "y": 45.0
+              }
+            },
+            "anchor": [
+              "Center",
+              "Center"
+            ],
+            "text_size": 12.0,
+            "layer": null
+          },
+          "shape": {
+            "Rectangle": {
+              "bottom_right_point": {
+                "x": 24.3,
+                "y": 14
+              },
+              "rounding": {
+                "nw": 0.0,
+                "ne": 0.0,
+                "sw": 0.0,
+                "se": 0.0
+              },
+              "if_keep": true
+            }
+          },
+          "if_delete": false,
+          "animation": [],
+          "label": null
+        },
+        {
+          "style": {
+            "position": {
+              "x": 12.0,
+              "y": 5.0
+            },
+            "if_absolute": false,
+            "size": {
+              "x": 1.0,
+              "y": 1.0
+            },
+            "rotate": 0.0,
+            "rotate_center": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "fill": [
+              255,
+              255,
+              255,
+              255
+            ],
+            "stroke": {
+              "width": 0.0,
+              "color": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "volume": {
+              "min": {
+                "x": 29.0,
+                "y": 15.0
+              },
+              "max": {
+                "x": 46.0,
+                "y": 45.0
+              }
+            },
+            "anchor": [
+              "Min",
+              "Center"
+            ],
+            "text_size": 12.0,
+            "layer": null
+          },
+          "shape": {
+            "Text": {
+              "text": {
+                "Text": "TEST1111111111111111111111111111111111111111111111111111111111111111"
+              }
+            }
+          },
+          "if_delete": false,
+          "animation": [],
+          "label": [
+            "Title"
+          ]
+        }
+      ],
+      "click_logic": {
+        "OpenWindow": {
+          "FromLabel": [
+            "Chart 1"
+          ]
+        }
+      },
+      "hold_logic": null
+    }

@@ -1,0 +1,19 @@
+{
+  "label": ["EditNew"],
+  "position": {
+    "x": 15.0,
+    "y": 15.0
+  },
+  "size": {
+    "x": 70.0,
+    "y": 60.0
+  },
+  "if_labeled": false,
+  "resizeable": null,
+  "draggable": false,
+  "title": null,
+  "model": false,
+  "id": 1001,
+  "content": [],
+  "if_enabled": true
+}

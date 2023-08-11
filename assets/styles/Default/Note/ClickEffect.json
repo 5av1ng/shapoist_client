@@ -1,0 +1,139 @@
+[
+  {
+    "style": {
+      "if_absolute": false,
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "size": {
+        "x": 1.0,
+        "y": 1.0
+      },
+      "rotate": 0.0,
+      "rotate_center": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "fill": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "stroke": {
+        "width": 3.0,
+        "color": [
+          255,
+          255,
+          255,
+          255
+        ]
+      },
+      "volume": {
+        "min": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "max": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "anchor": [
+        "Center",
+        "Center"
+      ],
+      "text_size": 12.0
+    },
+    "shape": {
+      "Circle": {
+        "radius": 1.0
+    }
+  },
+  "if_delete": false,
+    "animation": [
+      {
+        "style": {
+          "Size": {
+            "points": [
+              {
+                "x": 0.0,
+                "y": 0.0
+              },
+              {
+                "x": 0.0,
+                "y": 0.0
+              },
+              {
+                "x": 10.0,
+                "y": 10.0
+              },
+              {
+                "x": 10.0,
+                "y": 10.0
+              }
+            ],
+            "if_close": false
+          }
+        },
+        "start_value": 0.5,
+        "end_value": 2.0,
+        "animation": {
+          "control_point_one": {
+            "x": 0.2,
+            "y": 0.8
+          },
+          "control_point_two": {
+            "x": 0.3,
+            "y": 0.9
+          }
+        },
+        "animate_time": 100000,
+        "if_animating": true,
+        "id": 1
+      },
+      {
+        "style": {
+          "Size": {
+            "points": [
+              {
+                "x": 0.0,
+                "y": 0.0
+              },
+              {
+                "x": 0.0,
+                "y": 0.0
+              },
+              {
+                "x": 10.0,
+                "y": 10.0
+              },
+              {
+                "x": 10.0,
+                "y": 10.0
+              }
+            ],
+            "if_close": false
+          }
+        },
+        "start_value": 2.0,
+        "end_value": 0.0,
+        "animation": {
+          "control_point_one": {
+            "x": 0.2,
+            "y": 0.8
+          },
+          "control_point_two": {
+            "x": 0.3,
+            "y": 0.9
+          }
+        },
+        "start_time": 100000,
+        "animate_time": 1,
+        "if_animating": true,
+        "id": 1
+      }
+    ]
+  }
+]

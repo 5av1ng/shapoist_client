@@ -1,0 +1,382 @@
+{
+  "songtitle": "SINE",
+  "mapname": "TEST",
+  "bpm": 150.0,
+  "producer": "Unknown",
+  "charter": "Unknown",
+  "painter": "Unknown",
+  "note": {
+    "0": [
+      {
+        "id": 0,
+        "judge_field_id": 0,
+        "shape": [
+          {
+            "style": {
+              "position": {
+                "x": -100.0,
+                "y": -100.0
+              },
+              "if_absolute": false,
+              "size": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "rotate": 0.0,
+              "rotate_center": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "fill": [
+                255,
+                255,
+                255,
+                255
+              ],
+              "stroke": {
+                "width": 0.0,
+                "color": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "volume": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 0.0,
+                  "y": 0.0
+                }
+              },
+              "anchor": [
+                "Center",
+                "Center"
+              ],
+              "text_size": 12.0,
+              "layer": null
+            },
+            "shape": {
+              "Rectangle": {
+                "bottom_right_point": {
+                  "x": 10.0,
+                  "y": 1.5
+                },
+                "rounding": {
+                  "nw": 7.0,
+                  "ne": 7.0,
+                  "sw": 7.0,
+                  "se": 7.0
+                },
+                "if_keep": false
+              }
+            },
+            "animation": [
+              {
+                "style": {
+                  "Position": {
+                    "points": [
+                      {
+                        "x": 50.0,
+                        "y": 0.0
+                      },
+                      {
+                        "x": 50.0,
+                        "y": 0.0
+                      },
+                      {
+                        "x": 50.0,
+                        "y": 80.0
+                      },
+                      {
+                        "x": 50.0,
+                        "y": 80.0
+                      }
+                    ],
+                    "if_close": false
+                  }
+                },
+                "start_value": 0.0,
+                "end_value": 7.745967,
+                "animation": {
+                  "control_point_one": {
+                    "x": 0.0,
+                    "y": 0.0
+                  },
+                  "control_point_two": {
+                    "x": 1.0,
+                    "y": 1.0
+                  }
+                },
+                "start_time": 825404,
+                "animate_time": 774596,
+                "if_animating": true,
+                "id": 1
+              }
+            ],
+            "label": null,
+            "sustain_time": [
+              0,
+              99999999999999
+            ],
+            "if_delete": false
+          },
+          {
+            "style": {
+              "position": {
+                "x": -100.0,
+                "y": -100.0
+              },
+              "if_absolute": false,
+              "size": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "rotate": 0.0,
+              "rotate_center": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "fill": [
+                255,
+                255,
+                255,
+                255
+              ],
+              "stroke": {
+                "width": 0.0,
+                "color": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "volume": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 0.0,
+                  "y": 0.0
+                }
+              },
+              "anchor": [
+                "Center",
+                "Center"
+              ],
+              "text_size": 12.0,
+              "layer": null
+            },
+            "shape": {
+              "Circle": {
+                "radius": 0.5
+              }
+            },
+            "animation": [
+              {
+                "style": {
+                  "Position": {
+                    "points": [
+                      {
+                        "x": 44.5,
+                        "y": 0.0
+                      },
+                      {
+                        "x": 44.5,
+                        "y": 0.0
+                      },
+                      {
+                        "x": 44.5,
+                        "y": 80.0
+                      },
+                      {
+                        "x": 44.5,
+                        "y": 80.0
+                      }
+                    ],
+                    "if_close": false
+                  }
+                },
+                "start_value": 0.0,
+                "end_value": 7.745967,
+                "animation": {
+                  "control_point_one": {
+                    "x": 0.0,
+                    "y": 0.0
+                  },
+                  "control_point_two": {
+                    "x": 1.0,
+                    "y": 1.0
+                  }
+                },
+                "start_time": 825404,
+                "animate_time": 774596,
+                "if_animating": true,
+                "id": 1
+              }
+            ],
+            "label": null,
+            "sustain_time": [
+              0,
+              99999999999999
+            ],
+            "if_delete": false
+          },
+          {
+            "style": {
+              "position": {
+                "x": -100.0,
+                "y": -100.0
+              },
+              "if_absolute": false,
+              "size": {
+                "x": 1.0,
+                "y": 1.0
+              },
+              "rotate": 0.0,
+              "rotate_center": {
+                "x": 0.0,
+                "y": 0.0
+              },
+              "fill": [
+                255,
+                255,
+                255,
+                255
+              ],
+              "stroke": {
+                "width": 0.0,
+                "color": [
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "volume": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 0.0,
+                  "y": 0.0
+                }
+              },
+              "anchor": [
+                "Center",
+                "Center"
+              ],
+              "text_size": 12.0,
+              "layer": null
+            },
+            "shape": {
+              "Circle": {
+                "radius": 0.5
+              }
+            },
+            "animation": [
+              {
+                "style": {
+                  "Position": {
+                    "points": [
+                      {
+                        "x": 55.5,
+                        "y": 0.0
+                      },
+                      {
+                        "x": 55.5,
+                        "y": 0.0
+                      },
+                      {
+                        "x": 55.5,
+                        "y": 80.0
+                      },
+                      {
+                        "x": 55.5,
+                        "y": 80.0
+                      }
+                    ],
+                    "if_close": false
+                  }
+                },
+                "start_value": 0.0,
+                "end_value": 7.745967,
+                "animation": {
+                  "control_point_one": {
+                    "x": 0.0,
+                    "y": 0.0
+                  },
+                  "control_point_two": {
+                    "x": 1.0,
+                    "y": 1.0
+                  }
+                },
+                "start_time": 825404,
+                "animate_time": 774596,
+                "if_animating": true,
+                "id": 1
+              }
+            ],
+            "label": null,
+            "sustain_time": [
+              0,
+              99999999999999
+            ],
+            "if_delete": false
+          }
+        ],
+        "clicked_time": null,
+        "click_time": 1600000,
+        "start_time": 0,
+        "start_position": {
+          "x": 50.0,
+          "y": 0.0
+        },
+        "final_position": {
+          "x": 50.0,
+          "y": 80.0
+        },
+        "judge_type": "Tap",
+        "judge": "None",
+        "label": null,
+        "if_delete": false
+      }
+    ]
+  },
+  "now_judge": {
+    "0": 0
+  },
+  "judge_field": [
+    {
+      "size": {
+        "x": 60.0,
+        "y": 60.0
+      },
+      "position": {
+        "x": 20.0,
+        "y": 20.0
+      },
+      "id": 0,
+      "animation": [],
+      "rotate": 0.7853982,
+      "end_time": 3000000,
+      "start_time": 0,
+      "rotate_center": {
+        "x": 50.0,
+        "y": 50.0
+      },
+      "key": "A",
+      "label": null
+    }
+  ],
+  "shape": [],
+  "length": 3000000,
+  "if_playing": false,
+  "offect": 0
+}

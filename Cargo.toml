@@ -1,0 +1,51 @@
+[package]
+name = "agdk-shapoist"
+version = "0.0.1"
+edition = "2021"
+resolver = "2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+winit = { version = "0.28", features = [ "android-game-activity" ] }
+wgpu = "0.16.0"
+pollster = "0.2"
+egui = { version = "0.22.0", features = ["serde"] }
+chrono = "0.4.24"
+colored = "2.0.0"
+once_cell = "1.17.1"
+serde = { version = "1.0.163", features = ["derive"] }
+serde_json = "1.0.96"
+eframe = { version = "0.22", features = [ "wgpu", "android-game-activity" ] }
+image = "0.24.6"
+pest = "2.7.1"
+pest_derive = "2.7.1"
+kira = "0.8.4"
+rand = "0.8.5"
+utf8_slice = "1.0.0"
+flate2 = "1.0.26"
+tar = "0.4.39"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+env_logger = "0.10"
+rfd = "0.11.4"
+
+[target.'cfg(target_os = "android")'.dependencies]
+android_logger = "0.13.1"
+
+[features]
+default = []
+desktop = []
+
+[lib]
+name="main"
+crate_type=["cdylib"]
+
+[[bin]]
+path="src/lib.rs"
+name="agdk-shapoist"
+required-features = [ "desktop" ]
+
+[profile.dev.package."*"]
+opt-level = 3
