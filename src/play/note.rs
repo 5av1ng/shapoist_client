@@ -733,6 +733,7 @@ impl Note {
 				let note_json = read_file(&path)?;
 				note_read = prase_json(&note_json)?;
 				for a in &mut note_read {
+					a.sustain_time = Some((self.start_time,self.click_time + FADE_TIME as u128));
 					let offect = a.style.position;
 					a.style.position = Vec2 { x: -100.0, y: -100.0 };
 					if let StyleAnimate::Position(t) = &mut a.animation[0].style {
