@@ -372,7 +372,9 @@ impl Chart {
 		let mut timer = Timer::new(1);
 		timer.start()?;
 		timer.set(time_read)?;
+		let uspb = (60.0 * 1e6 / project.chart.bpm) as u128;
 		ui.label(format!("{} {:.3}",Language::Code(133).get_language()?, timer.read()? as f64 / 1e6));
+		ui.label(format!("{} {:.3}",Language::Code(160).get_language()?, timer.read()? as f64 / uspb as f64));
 		let mut vec_back = Vec::new();
 		if !project.if_music_play && project.if_playing {
 			vec_back.push(Back::MusicPlay(format!("data/data/com.saving.shapoist/assets/chart/{}/song.mp3", self.mapname), self.bpm,0.0, (-(project.current_time as f32) + self.offect as f32) as f32 / 1e6));
