@@ -370,8 +370,11 @@ impl Chart {
 		};
 		let mut map = HashMap::new();
 		let mut timer = Timer::new(1);
+		let setting = read_settings()?;
 		timer.start()?;
 		timer.set(time_read)?;
+		timer.set((setting.offect * 1e3) as u128)?;
+		timer.set(self.offect)?;
 		let uspb = (60.0 * 1e6 / project.chart.bpm) as u128;
 		ui.label(format!("{} {:.3}",Language::Code(133).get_language()?, timer.read()? as f64 / 1e6));
 		ui.label(format!("{} {:.3}",Language::Code(160).get_language()?, timer.read()? as f64 / uspb as f64));
@@ -492,6 +495,8 @@ impl Chart {
 		let mut timer = Timer::new(1);
 		timer.start()?;
 		timer.set(time_read)?;
+		timer.set((setting.offect * 1e3) as u128)?;
+		timer.set(self.offect)?;
 		let mut vec_back = Vec::new();
 		if !self.if_playing {
 			vec_back.push(Back::MusicPlay(format!("data/data/com.saving.shapoist/assets/chart/{}/song.mp3", self.mapname), self.bpm, 0.0, self.offect as f32 / 1e6));
