@@ -316,18 +316,18 @@ impl Chart {
 		self.length = max_length;
 
 		for (_, b) in &mut self.note {
-			b.sort_by(|a, b| b.click_time.cmp(&a.click_time));
+			b.sort_by(|a, b| a.click_time.cmp(&b.click_time));
 			if b.len() > 0 {
 				for c in 0..b.len() {
 					b[c].id = c;
 				}
 			}
 		}
-		self.judge_field.sort_by(|a, b| b.end_time.cmp(&a.end_time));
+		self.judge_field.sort_by(|a, b| a.end_time.cmp(&b.end_time));
 		self.shape.sort_by(|a, b| {
 			let (_,b) = b.sustain_time.unwrap();
 			let (_,a) = a.sustain_time.unwrap();
-			b.cmp(&a)
+			a.cmp(&b)
 		});
 	}
 
