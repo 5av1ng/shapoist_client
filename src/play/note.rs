@@ -765,7 +765,7 @@ impl Note {
 								},
 								shape: Shape::Circle(Circle{radius: setting.note_prompt_radius}),
 								..Default::default()
-							}.render(ui, size, timer ,None, if_paused,texture)?;
+							}.render(ui, size, timer ,offect, if_paused,texture)?;
 						}
 					}
 				},
@@ -780,7 +780,7 @@ impl Note {
 								},
 								shape: Shape::Circle(Circle{radius: setting.note_prompt_radius}),
 								..Default::default()
-							}.render(ui, size, timer ,None, if_paused,texture)?;
+							}.render(ui, size, timer ,offect, if_paused,texture)?;
 						}
 					}
 				}
