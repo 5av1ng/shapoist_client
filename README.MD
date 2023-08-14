@@ -1,5 +1,5 @@
 # Adgk-Shpoist
 
-using ndk create.
+using ndk crate.
 
 [click for more information](https://github.com/5av1ng/shapoist_client)
