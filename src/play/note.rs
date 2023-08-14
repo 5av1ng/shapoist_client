@@ -379,6 +379,10 @@ impl Chart {
 			Some(t) => t,
 			None => 0,
 		};
+		let offect_vec = match offect {
+			Some(t) => t,
+			None => Vec2::new(0.0,0.0),
+		};
 		timer.start()?;
 		timer.set(time_read)?;
 		let uspb = (60.0 * 1e6 / project.chart.bpm) as u128;
@@ -478,7 +482,7 @@ impl Chart {
 					max: (position + Vec2{x: 30.0, y: 30.0}).to_pos2()
 				};
 				let (_, response) = ui.allocate_ui_at_rect(vol_rect, |ui| {
-					ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect.max.x - vol_rect.min.x, y: vol_rect.max.y - vol_rect.min.y}, egui::Sense::click_and_drag())).inner
+					ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect.max.x - vol_rect.min.x + offect_vec.x, y: vol_rect.max.y - vol_rect.min.y + offect_vec.y}, egui::Sense::click_and_drag())).inner
 				}).inner;
 				map.insert(RenderType::Note(*id, c), response);
 			}
@@ -489,7 +493,7 @@ impl Chart {
 		Ok((vec_back, map))
 	}
 
-	pub fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, input_timer: &mut Timer, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>, touch: &HashMap<u64, Touch>) -> Result<Vec<Back>, ShapoError> {
+	pub fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, input_timer: &mut Timer, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>, touch: &mut HashMap<u64, Touch>) -> Result<Vec<Back>, ShapoError> {
 		let time_read = match input_timer.read()?.checked_sub(3 * 1e6 as u128) {
 			Some(t) => t,
 			None => return Ok(vec!(Back::Nothing))
@@ -574,7 +578,7 @@ impl Chart {
 		});
 
 		for field in &self.judge_field {
-			for (_, t) in touch {
+			for (_, t) in &mut *touch {
 				let note = match self.note.get_mut(&field.id) {
 					Some(note) => note,
 					None => return Err(ShapoError::SystemError("???".to_string())),
@@ -591,21 +595,25 @@ impl Chart {
 								note[iter_number].clicked_time = Some(time_read);
 								judged_note.push((field.id,iter_number));
 								*self.now_judge.get_mut(&field.id).unwrap() = *self.now_judge.get_mut(&field.id).unwrap() + 1;
+								t.if_click = false;
 							}else if -EXTRA_TIME < delta && delta < EXTRA_TIME {
 								note[iter_number].judge = Judge::Extra;
 								note[iter_number].clicked_time = Some(time_read);
 								judged_note.push((field.id,iter_number));
 								*self.now_judge.get_mut(&field.id).unwrap() = *self.now_judge.get_mut(&field.id).unwrap() + 1;
+								t.if_click = false;
 							}else if -NORMAL_TIME < delta && delta < NORMAL_TIME {
 								note[iter_number].judge = Judge::Normal;
 								note[iter_number].clicked_time = Some(time_read);
 								judged_note.push((field.id,iter_number));
 								*self.now_judge.get_mut(&field.id).unwrap() = *self.now_judge.get_mut(&field.id).unwrap() + 1;
+								t.if_click = false;
 							}else if -FADE_TIME < delta && delta < FADE_TIME {
 								note[iter_number].judge = Judge::Fade;
 								note[iter_number].clicked_time = Some(time_read);
 								judged_note.push((field.id,iter_number));
 								*self.now_judge.get_mut(&field.id).unwrap() = *self.now_judge.get_mut(&field.id).unwrap() + 1;
+								t.if_click = false;
 							}
 						}
 					}
@@ -700,7 +708,7 @@ impl Note {
 	fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, timer: &mut Vec<Timer>, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>) -> Result<Vec<Back>, ShapoError>  {
 		let mut vec_back = Vec::new();
 		let time_read = timer[0].read()?;
-		if self.click_time + 15 * 1e5 as u128 > time_read && self.judge == Judge::None {
+		if self.click_time + FADE_TIME as u128 > time_read && self.judge == Judge::None {
 			let setting = read_settings()?;
 			if let Some(t) = &mut self.shape {
 				for a in t {
@@ -756,7 +764,7 @@ impl Note {
 			match self.judge_type {
 				JudgeType::Tap => {
 					if let Some(t) = setting.tap_prompt_color {
-						if time_read < self.click_time {
+						if time_read > self.start_time {
 							Shapo {
 								style: Style {
 									position: self.final_position,
@@ -771,7 +779,7 @@ impl Note {
 				},
 				JudgeType::Slide => {
 					if let Some(t) = setting.slide_prompt_color {
-						if time_read < self.click_time {
+						if time_read > self.start_time {
 							Shapo {
 								style: Style {
 									position: self.final_position,

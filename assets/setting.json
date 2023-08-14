@@ -15,14 +15,14 @@
     100,
     100
   ],
-  "note_prompt_radius": 1.0,
+  "note_prompt_radius": 0.0,
   "judge_field_prompt_color": [
     255,
     255,
     255,
     100
   ],
-  "judge_field_prompt_size": 1.0,
+  "judge_field_prompt_size": 0.0,
   "drop_velocity": 0.00001,
   "immaculate_color": [
     246,

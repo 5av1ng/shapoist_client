@@ -67,7 +67,7 @@ pub struct Touch {
 impl Touch {
 	fn update(&mut self) {
 		self.time = self.time + 1;
-		if self.time > 30 {
+		if self.time > 10 {
 			self.if_click = false;
 		}
 	}
@@ -292,7 +292,7 @@ impl PlayTop {
 				back_vec.push(Back::Pause);
 			}	
 		}
-		for a in self.chart.render(ui, size,&mut self.timer, !self.if_paused, texture, None, &self.touch)? {
+		for a in self.chart.render(ui, size,&mut self.timer, !self.if_paused, texture, None, &mut self.touch)? {
 			match a {
 				Back::AnimateDone(_) => {},
 				Back::JudgeNote(t) => {

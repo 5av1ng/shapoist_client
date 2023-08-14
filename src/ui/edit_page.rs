@@ -127,7 +127,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				if ui.button(language[54].clone()).clicked() {
 					chart.shape.push(Shapo{
 						shape: Shape::Circle(Circle::default()),
-						sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+						sustain_time: Some((none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb, (current_beat as u128 + 4) * uspb)),
 						label: Some(vec!(temp.project.now_shape_id.to_string())),
 						..Default::default()
 					});
@@ -138,7 +138,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				if ui.button(language[55].clone()).clicked() {
 					chart.shape.push(Shapo{
 						shape: Shape::Rectangle(Rectangle::default()),
-						sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+						sustain_time: Some((none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb, (current_beat as u128 + 4) * uspb)),
 						label: Some(vec!(temp.project.now_shape_id.to_string())),
 						..Default::default()
 					});
@@ -154,7 +154,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							fill: Color32::TRANSPARENT,
 							..Default::default()
 						},
-						sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+						sustain_time: Some((none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb, (current_beat as u128 + 4) * uspb)),
 						label: Some(vec!(temp.project.now_shape_id.to_string())),
 						..Default::default()
 					});
@@ -242,7 +242,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 						id: temp.project.now_note_id,
 						judge_field_id: temp.project.now_judge_field_id,
 						start_time: current_beat as u128 * uspb,
-						click_time: (current_beat as u128 + 4) * uspb,
+						click_time: current_beat as u128 * uspb,
 						judge_type: JudgeType::Tap,
 						..Default::default()
 					});
@@ -257,8 +257,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					}.push(Note{
 						id: temp.project.now_note_id,
 						judge_field_id: temp.project.now_judge_field_id,
-						start_time: current_beat as u128 * uspb,
-						click_time: (current_beat as u128 + 4) * uspb,
+						start_time: none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb,
+						click_time: current_beat as u128 * uspb,
 						judge_type: JudgeType::Slide,
 						..Default::default()
 					});
@@ -274,8 +274,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 			if ui.button(language[52].clone()).clicked() {
 				let mut chart = temp.project.chart.clone();
 				chart.judge_field.push(JudgeField{
-					start_time: current_beat as u128 * uspb,
-					end_time: (current_beat as u128 + 4) * uspb,
+					start_time: none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb,
+					end_time: (current_beat as u128) * uspb,
 					id: temp.project.new_judge_field_id,
 					..Default::default()
 				});
@@ -625,15 +625,15 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				let note = &mut match temp.project.chart.note.get_mut(&j) {
 					Some(t) => t,
 					None => return Err(ShapoError::SystemError(format!("cant find note to show")))
-				}[*n];
-				if let None = note.shape {
+				};
+				if let None = note[*n].shape {
 					return Err(ShapoError::SystemError(format!("cant find shape")))
 				}
-				let backup = note.clone();
-				if let Some(t) = egui::Window::new(format!("{} {}", language[53].clone(), note.id)).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<(Back, Note, bool), ShapoError> {
+				let backup = note[*n].clone();
+				if let Some(t) = egui::Window::new(format!("{} {}", language[53].clone(), note[*n].id)).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<(Back, Note, bool), ShapoError> {
 					let mut back_message = Back::Nothing;
-					let mut new_note = note.clone();
-					let backup = note.clone();
+					let mut new_note = note[*n].clone();
+					let backup = note[*n].clone();
 					let mut delete = false;
 					if let Some(s) = &mut new_note.shape {
 						let mut number = 0;
@@ -755,6 +755,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 								new_note.if_delete = true;
 								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Delete)), String::new());
 							}
+							ui.end_row();
 
 							if ui.button(language[129].clone()).clicked() {
 								window_to_close = Some(id)
@@ -763,8 +764,14 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 						if shape != Shapo::default() {
 							s.push(shape);
 						}
+						ui.end_row();
 						if ui.button(language[157].clone()).clicked() {
 							new_note.shape = None;
+							back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
+						}
+						ui.end_row();
+						if ui.button("Copy").clicked() {
+							new_note.label = Some(vec!("Copy".to_string()));
 							back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
 						}
 						ui.end_row();
@@ -783,8 +790,14 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							}
 							back.shape = Some(new_shape);
 						}
+						if let Some(l) = back.label.clone() {
+							if l == vec!("Copy".to_string()) {
+								back.label = None;
+								note.push(back.clone())
+							}
+						}
 						if backup != back {
-							*note = back;
+							note[*n] = back;
 							if let Back::Change(change, _) = back_message {
 								vec_back.push(Back::Change(change, to_json(&temp.project.chart)?));
 							}
@@ -1326,4 +1339,11 @@ fn bezier_curve_texture(ui: &mut egui::Ui, cb: &mut CubicBezier, language: &Vec<
 	ui.label(language[112].clone());
 	ui.add(egui::Slider::new(&mut cb.points[3].y, 0.0..=100.0).step_by(0.0001));
 	ui.end_row();
+}
+
+fn none_to_zero(input: &Option<u128>) -> u128 {
+	match input {
+		Some(t) => return *t,
+		None => return 0,
+	}
 }
