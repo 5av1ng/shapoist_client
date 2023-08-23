@@ -55,7 +55,7 @@ impl Shapo {
 	}
 
 	pub fn trig_animation(&mut self, id: usize) {
-		for mut a in &mut self.animation {
+		for a in &mut self.animation {
 			if a.id == id {
 				a.if_animating = true;
 			}

@@ -7,8 +7,8 @@ mod language;
 mod play;
 
 use crate::system::init::check;
-use log;
 use crate::system::system_function::clear_log;
+use crate::system::system_function::load_icon;
 use crate::error::error::ShapoError;
 use crate::system::system_function::create_file;
 use eframe::NativeOptions;
@@ -20,8 +20,12 @@ use std::env;
 use winit::platform::android::activity::AndroidApp;
 
 pub static LOGPATH: Lazy<String> = Lazy::new(|| {log_name_generate()});
+#[cfg(target_os = "android")]
+pub static ASSETS_PATH: Lazy<String> = Lazy::new(|| String::from("data/data/com.saving.shapoist"));
+#[cfg(not(target_os = "android"))]
+pub static ASSETS_PATH: Lazy<String> = Lazy::new(|| String::from("."));
 
-fn _main(mut options: NativeOptions){
+fn entry(mut options: NativeOptions){
     let args: Vec<String> = env::args().collect();
     let _ = check();
     create_file(&LOGPATH).unwrap();
@@ -45,24 +49,32 @@ fn android_main(app: AndroidApp) {
         ..Default::default()
     };
 
-    _main(options)
+    entry(options)
 }
 
 #[cfg(not(target_os = "android"))]
 fn main() {
     env_logger::builder()
-        .filter_level(log::LevelFilter::Warn) // Default Log Level
+        .filter(Some("adgk-shapoist::log_out::log_export"), log::LevelFilter::Info)
         .parse_default_env()
         .init();
-
-    _main(NativeOptions::default());
+    let icon = match load_icon(&format!("{}/assets/icon/icon.png", *ASSETS_PATH)) {
+        Ok(t) => Some(t),
+        Err(_) => None
+    };
+    let native_options = NativeOptions{
+        resizable: true,
+        initial_window_size: Some(egui::Vec2 { x: 800.0, y: 600.0 }),
+        min_window_size: Some(egui::Vec2 { x: 800.0, y: 600.0 }),
+        icon_data: icon,
+        drag_and_drop_support: true,
+        ..Default::default()
+    };
+    entry(native_options);
 }
 
 fn log_name_generate() -> String {
     let fmt = "%Y-%m-%d %H%M%S";
     let now = Local::now().format(fmt).to_string();
-    let mut log_name = "data/data/com.saving.shapoist/assets/log/[".to_string();
-    log_name += &now;
-    log_name += &"]running.log".to_string();
-    log_name
+    format!("{}/assets/log/[{}]running.log", *ASSETS_PATH, now)
 }

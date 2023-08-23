@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use kira::sound::Region;
 use kira::sound::EndPosition;
 use kira::sound::PlaybackPosition;
@@ -169,7 +170,7 @@ pub fn copy_file(file_path: &str, copy_path: &str) -> Result<(), ShapoError>{
 }
 
 pub fn clear_log() -> Result<(), ShapoError>{
-	let file = read_every_file("data/data/com.saving.shapoist/assets/log")?;
+	let file = read_every_file(&format!("{}/assets/log", *ASSETS_PATH))?;
 	if file.len() > 5 {
 		for a in 0..file.len() {
 			remove_file(&file[a])?
@@ -178,27 +179,27 @@ pub fn clear_log() -> Result<(), ShapoError>{
 	Ok(())
 }
 
-// pub fn load_icon(path: &str) -> Result<eframe::IconData,ShapoError> {
-// 	let (icon_rgba, icon_width, icon_height) = {
-// 		let image = match image::open(path) {
-// 			Ok(t) => t,
-// 			Err(e) => {
-// 				// print_log(&format!("[ERROR] read icon failed, info: {}",&e.to_string()));
-// 				return Err(ShapoError::SystemError(format!("icon failed to be read info: {}", &e.to_string())))
-// 			}
-// 		}.into_rgba8();
-// 		let (width, height) = image.dimensions();
-// 		let rgba = image.into_raw();
-// 		(rgba, width, height)
-// 	};
-// 	// print_log(&("Icon read"));
+pub fn load_icon(path: &str) -> Result<eframe::IconData,ShapoError> {
+	let (icon_rgba, icon_width, icon_height) = {
+		let image = match image::open(path) {
+			Ok(t) => t,
+			Err(e) => {
+				// print_log(&format!("[ERROR] read icon failed, info: {}",&e.to_string()));
+				return Err(ShapoError::SystemError(format!("icon failed to be read info: {}", &e.to_string())))
+			}
+		}.into_rgba8();
+		let (width, height) = image.dimensions();
+		let rgba = image.into_raw();
+		(rgba, width, height)
+	};
+	// print_log(&("Icon read"));
 
-// 	Ok(eframe::IconData {
-// 		rgba: icon_rgba,
-// 		width: icon_width,
-// 		height: icon_height,
-// 	})
-// }
+	Ok(eframe::IconData {
+		rgba: icon_rgba,
+		width: icon_width,
+		height: icon_height,
+	})
+}
 
 pub fn load_sound(path: &str, loop_region: Option<RangeFrom<f64>>, bpm: f32, beatnumber: f32, offect: f32, manager: &mut AudioManager) -> Result<ClockHandle, ShapoError> {
 	let mut setting = StaticSoundSettings::new();

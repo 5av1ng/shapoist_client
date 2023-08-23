@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::language::language::Language;
 use crate::create_file;
 use crate::system::system_function::remove_file;
@@ -90,7 +91,7 @@ impl Default for PlayInfo {
 
 impl PlayInfo {
 	pub fn read(mapname: String) -> Self {
-		match prase_json_form_path(&format!("data/data/com.saving.shapoist/assets/chart/{}/play.info", mapname)) {
+		match prase_json_form_path(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname)) {
 			Ok(t) => return t,
 			Err(_) => return Self::default(),
 		}
@@ -105,9 +106,9 @@ impl PlayInfo {
 			read.accuracy = self.accuracy
 		}
 
-		let _ = remove_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/play.info", mapname));
-		create_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/play.info", mapname))?;
-		write_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/play.info", mapname), &to_json(&read)?)?;
+		let _ = remove_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname));
+		create_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname))?;
+		write_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname), &to_json(&read)?)?;
 		Ok(delta)
 	}
 }
@@ -299,7 +300,7 @@ impl PlayTop {
 					for (judge_id, note_id) in t {
 						let setting = read_settings()?;
 						let read = &self.chart.note.get(&judge_id).unwrap()[note_id];
-						let click_effect_json = read_file(&format!("data/data/com.saving.shapoist/assets/styles/{}/Note/ClickEffect.json",setting.ui_theme))?;
+						let click_effect_json = read_file(&format!("{}/assets/styles/{}/Note/ClickEffect.json",*ASSETS_PATH ,setting.ui_theme))?;
 						let mut click_effect_read: Vec<Shapo>;
 						click_effect_read = prase_json(&click_effect_json)?;
 						for a in &mut click_effect_read {
@@ -321,8 +322,8 @@ impl PlayTop {
 						if let Judge::Miss = read.judge.clone(){}
 						else {
 							match read.clone().judge_type {
-								JudgeType::Tap => back_vec.push(Back::PlaySound(format!("data/data/com.saving.shapoist/assets/styles/{}/Sound/TapClickSound.mp3",setting.ui_theme))),
-								JudgeType::Slide=> back_vec.push(Back::PlaySound(format!("data/data/com.saving.shapoist/assets/styles/{}/Sound/SlideClickSound.mp3",setting.ui_theme))),
+								JudgeType::Tap => back_vec.push(Back::PlaySound(format!("{}/assets/styles/{}/Sound/TapClickSound.mp3",*ASSETS_PATH ,setting.ui_theme))),
+								JudgeType::Slide=> back_vec.push(Back::PlaySound(format!("{}/assets/styles/{}/Sound/SlideClickSound.mp3",*ASSETS_PATH ,setting.ui_theme))),
 							}
 						}
 						self.replay.clicks.push(Click{click_time: read.clicked_time, note_position: read.shape.clone().unwrap()[0].style.position});

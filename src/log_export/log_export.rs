@@ -24,10 +24,10 @@ pub fn print_out(strings: &str) -> String {
 	let log_text_split: Vec<&str> = strings.split(" ").collect();
 	if log_text_split[0] == "[ERROR]"{
 		let log_text_final = &strings[8..];
-		log::warn!("{0}{1}{2}",format!("[{}]",&now).yellow(),"[ERROR]".red(),log_text_final);
+		log::error!("{}", log_text_final);
 	}
 	else{
-		log::warn!("{0}{1}",format!("[{}]",&now).yellow(),strings);
+		log::info!("{}", strings);
 	}
 	let log_text = format!("[{}] {}\n",&now, &strings);
 	log_text

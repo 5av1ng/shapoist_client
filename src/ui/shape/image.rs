@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use egui::Pos2;
 use egui::Align;
 use std::collections::HashMap;
@@ -51,8 +52,8 @@ impl Image {
 		let handle:TextureHandle;
 		let setting  = read_settings()?;
 		let path = match self.first_path {
-			Path::Styles => format!("data/data/com.saving.shapoist/assets/styles/{}/{}",setting.ui_theme ,self.path),
-			Path::Chart => format!("data/data/com.saving.shapoist/assets/chart/{}",self.path),
+			Path::Styles => format!("{}/assets/styles/{}/{}",*ASSETS_PATH ,setting.ui_theme ,self.path),
+			Path::Chart => format!("{}/assets/chart/{}",*ASSETS_PATH ,self.path),
 		};
 		if let None = self.registered_info {
 			let image = load_image(&path)?;

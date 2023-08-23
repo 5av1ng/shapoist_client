@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::ui::shape::style::Style;
 use crate::ui::shapo::Shape;
 use crate::ui::shape::text::Text;
@@ -86,10 +87,10 @@ pub enum PossibleSettingChange {
 }
 
 pub fn read_settings() -> Result<Setting, ShapoError> {
-	let setting_read = match read_file("data/data/com.saving.shapoist/assets/setting.json"){
+	let setting_read = match read_file(&format!("{}/assets/setting.json", *ASSETS_PATH)){
 		Ok(t) => prase_json(&t)?,
 		Err(_) => {
-			// write_file("data/data/com.saving.shapoist/assets/setting.json", &to_json(&Setting::default())?)?;
+			write_file(&format!("{}/assets/setting.json", *ASSETS_PATH), &to_json(&Setting::default())?)?;
 			Setting::default()
 		}
 	};
@@ -159,26 +160,26 @@ impl Setting {
 impl Setting {
 	pub fn ui(&self) -> Result<Window,ShapoError> {
 		let mut content = vec!();
-		let ui_theme = read_every_file("data/data/com.saving.shapoist/assets/styles")?;
+		let ui_theme = read_every_file(&format!("{}/assets/styles", *ASSETS_PATH))?;
 		let mut ui_theme_true= vec!();
 		let mut ui_theme_json= vec!();
 		for a in &ui_theme {
-			let slice = utf8_slice::from(a, 44);
+			let slice = utf8_slice::from(a, ASSETS_PATH.len() + 15);
 			if slice != "Font.ttf" {
 				ui_theme_true.push(slice.to_string());
 				ui_theme_json.push(to_json(&slice)?);
 			}
 		}
-		let language = read_every_file("data/data/com.saving.shapoist/assets/language")?;
+		let language = read_every_file(&format!("{}/assets/language", *ASSETS_PATH))?;
 		let mut language_true = vec!();
 		let mut language_json = vec!();
 		let mut value_show = String::new();
 		for a in &language {
-			let slice = utf8_slice::from(a, 46);
+			let slice = utf8_slice::from(a, ASSETS_PATH.len() + 17);
 			if slice == self.language {
-				value_show = read_file(&format!("data/data/com.saving.shapoist/assets/language/{}/info.ini", slice))?.trim().to_string();
+				value_show = read_file(&format!("{}/assets/language/{}/info.ini",*ASSETS_PATH , slice))?.trim().to_string();
 			}
-			language_true.push(read_file(&format!("data/data/com.saving.shapoist/assets/language/{}/info.ini", slice))?.trim().to_string());
+			language_true.push(read_file(&format!("{}/assets/language/{}/info.ini",*ASSETS_PATH , slice))?.trim().to_string());
 			language_json.push(to_json(&slice)?);
 		}
 		content.push(Component::ComboBox(ComboBox {
@@ -253,7 +254,7 @@ impl Setting {
 			click_logic: Some(Logic::CloseWindow(1002)),
 			hold_logic: None
 		}));
-		let window_read = read_file(&format!("data/data/com.saving.shapoist/assets/styles/{}/Window/Setting.json", self.ui_theme))?;
+		let window_read = read_file(&format!("{}/assets/styles/{}/Window/Setting.json",*ASSETS_PATH , self.ui_theme))?;
 		let mut window: Window = prase_json(&window_read)?;
 		window.content = content;
 		Ok(window)

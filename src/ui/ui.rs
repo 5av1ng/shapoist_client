@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::ui::end_page::end_page;
 use crate::ui::edit_page::edit_page;
 use crate::ui::page::Temp;
@@ -133,7 +134,7 @@ impl Display {
 			*self = Self::test_page(size);
 			return Ok(Back::Nothing);
 		}else if let Router::PlayPage(t) = router {
-			let play_top_read = PlayTop::read(&format!("data/data/com.saving.shapoist/assets/chart/{}/map.shapoistmap",t))?;
+			let play_top_read = PlayTop::read(&format!("{}/assets/chart/{}/map.shapoistmap",*ASSETS_PATH,t))?;
 			temp.chart = play_top_read.chart.clone();
 			*self = Self {
 				play_top: Some(play_top_read),
@@ -142,12 +143,12 @@ impl Display {
 			};
 			return Ok(Back::PauseSound);
 		}else if let Router::MainPage = router {
-			back = Back::MusicPlay(format!("data/data/com.saving.shapoist/assets/styles/{}/Music/MainTheme.mp3",setting.ui_theme), -1.0, 0.0, 0.0)
+			back = Back::MusicPlay(format!("{}/assets/styles/{}/Music/MainTheme.mp3",*ASSETS_PATH,setting.ui_theme), -1.0, 0.0, 0.0)
 		}else if let Router::EndPage(playtop) = router {
 		 	*self = end_page(playtop.clone())?;
 		 	return Ok(Back::PauseSound);
 		};
-		let path = format!("data/data/com.saving.shapoist/assets/styles/{}/{}.json",&setting.ui_theme, &router.to_string());
+		let path = format!("{}/assets/styles/{}/{}.json",*ASSETS_PATH,&setting.ui_theme, &router.to_string());
 		let read =  read_file(&path)?;
 		let mut display_read:Self = prase_json(&read)?;
 		if !display_read.label.is_none() {

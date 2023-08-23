@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::ui::ui::Display;
 use crate::ui::component::window::Window;
 use crate::ui::shape::text::Text;
@@ -244,7 +245,7 @@ pub fn end_page(play_top: PlayTop) -> Result<Display, ShapoError> {
 		})));
 	}
 	
-	let mut window = Window::from_path(format!("data/data/com.saving.shapoist/assets/styles/{}/Window/Window.json", setting.ui_theme))?;
+	let mut window = Window::from_path(format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?;
 	window.id = 1003;
 	window.size = Vec2 {x: 82.0, y: 70.0};
 	window.position = Vec2 {x: 10.0, y: 10.0};

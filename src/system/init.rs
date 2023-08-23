@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::system::system_function::read_every_file;
 use std::fs::File;
 use flate2::read::GzDecoder;
@@ -26,7 +27,7 @@ pub fn check() -> Result<(),ShapoError> {
 					};
 					let tar = GzDecoder::new(file);
 					let mut archive = Archive::new(tar);
-					match archive.unpack(format!("data/data/com.saving.shapoist/assets/chart/")){
+					match archive.unpack(format!("{}/assets/chart/", *ASSETS_PATH)){
 						Ok(_) => {}
 						Err(e) => return Err(ShapoError::SystemError(e.to_string()))
 					};
@@ -39,12 +40,12 @@ pub fn check() -> Result<(),ShapoError> {
 
 pub fn init() -> Result<(),ShapoError> {
 
-	let _ = remove_path("data/data/com.saving.shapoist/assets");
+	let _ = remove_path(&format!("{}/assets", *ASSETS_PATH));
 
 	let path = include_bytes!("../../assets.tar.gz");
 	let tar = GzDecoder::new(&path[..]);
 	let mut archive = Archive::new(tar);
-	match archive.unpack("data/data/com.saving.shapoist/"){
+	match archive.unpack(&*ASSETS_PATH){
 		Ok(_) => return Ok(()),
 		Err(e) => return Err(ShapoError::SystemError(e.to_string()))
 	};

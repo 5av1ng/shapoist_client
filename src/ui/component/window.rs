@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::play::note::Chart;
 use crate::ui::shape::image::*;
 use crate::ui::shape::rectangle::Rectangle;
@@ -242,7 +243,7 @@ impl Window {
 			image_path_json.push(to_json(&a.clone())?);
 		}
 		let setting = read_settings()?;
-		let mut window:Window = prase_json_form_path(&format!("data/data/com.saving.shapoist/assets/styles/{}/Window/Window.json", setting.ui_theme))?;
+		let mut window:Window = prase_json_form_path(&format!("{}/assets/styles/{}/Window/Window.json", *ASSETS_PATH, setting.ui_theme))?;
 		let content = vec!(
 			Component::InputBox(InputBox{
 				shape: vec!(),
@@ -366,16 +367,16 @@ impl Window {
 	}
 
 	fn edit_window(&mut self, temp: &Temp) -> Result<(),ShapoError> {
-		let projects = read_every_file("data/data/com.saving.shapoist/assets/chart")?;
+		let projects = read_every_file(&format!("{}/assets/chart", *ASSETS_PATH))?;
 		let mut choice = vec!();
 		let mut choice_json = vec!();
 		for a in projects {
-			let slice = utf8_slice::from(&a, 43);
+			let slice = utf8_slice::from(&a, ASSETS_PATH.len() + 14);
 			choice.push(slice.to_string());
 			choice_json.push(to_json(&a)?);
 		}
 		let setting = read_settings()?;
-		let mut window:Window = prase_json_form_path(&format!("data/data/com.saving.shapoist/assets/styles/{}/Window/Window.json", setting.ui_theme))?;
+		let mut window:Window = prase_json_form_path(&format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?;
 		let content = vec!(
 			Component::ComboBox(ComboBox{
 				shape: vec!(),
@@ -455,7 +456,7 @@ impl Window {
 	}
 
 	fn play_window(&mut self, split: Vec<&str>) -> Result<(),ShapoError> {
-		let charts = read_every_file("data/data/com.saving.shapoist/assets/chart")?;
+		let charts = read_every_file(&format!("{}/assets/chart", *ASSETS_PATH))?;
 		let page_number: i32 = match split[2].parse(){
 			Ok(t) => t,
 			Err(_) => {
@@ -477,7 +478,7 @@ impl Window {
 			return Err(ShapoError::SystemError(format!("invailed page number")))
 		}else {
 			let setting = read_settings()?;
-			let file_read = read_file(&format!("data/data/com.saving.shapoist/assets/styles/{}/Component/ChartCard.json", setting.ui_theme))?;
+			let file_read = read_file(&format!("{}/assets/styles/{}/Component/ChartCard.json", *ASSETS_PATH, setting.ui_theme))?;
 			let mut button = Button::default();
 			button.shape[0].style.volume = Rect { min: Pos2 { x: 0.0, y: 0.0 }, max: Pos2 { x: 100.0, y: 100.0} };
 			button.shape[0].style.fill = Color32::from_rgba_premultiplied(0,0,0,0);
@@ -497,7 +498,7 @@ impl Window {
 					}else {
 						for c in b.label.clone().unwrap() {
 							if c == "Image".to_string() {
-								let image_path = format!("{}/image.png",&charts[card_number + 9 * (page_number as usize - 1)][43..]);
+								let image_path = format!("{}/image.png",&charts[card_number + 9 * (page_number as usize - 1)][ASSETS_PATH.len() + 14..]);
 								if let Shape::Image(t) = &mut b.shape {
 									t.path = image_path
 								}else {
@@ -508,7 +509,7 @@ impl Window {
 									y: ((card_number - card_number % 3)/3) as f32 * 30.0  + 17.0
 								};
 							}else if c == "Title".to_string() {
-								let title = format!("{}",&charts[card_number + 9 * (page_number as usize - 1)][43..]);
+								let title = format!("{}",&charts[card_number + 9 * (page_number as usize - 1)][ASSETS_PATH.len() + 14..]);
 								if let Shape::Text(t) = &mut b.shape {
 									*t = Text::new_from_string(title);
 								}else {
@@ -579,7 +580,7 @@ impl Window {
 			
 			*self = Window {
 				content: component_vec,
-				..Self::from_path(format!("data/data/com.saving.shapoist/assets/styles/{}/Window/Window.json", setting.ui_theme))?
+				..Self::from_path(format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?
 			};
 			self.if_labeled = true;
 		}
@@ -596,9 +597,9 @@ impl Window {
 		let component_vec = vec!(Component::Button(button),
 			Component::Shapo(vec!(Shapo {
 					shape: Shape::Image(Image {
-						name: String::from(&label[1][43..]),
+						name: String::from(&label[1][ASSETS_PATH.len() + 14..]),
 						first_path: Path::Chart,
-						path: format!("{}/image.png",&label[1][43..]),
+						path: format!("{}/image.png",&label[1][ASSETS_PATH.len() + 14..]),
 						bottom_right_point: Vec2{x: 100.0,y: 100.0},
 						..Default::default()
 					}),
@@ -727,7 +728,7 @@ impl Window {
 			Component::Button(Button {
 				shape: vec!(Shapo {
 					shape: Shape::Image(Image {
-						name: String::from(&label[1][43..]),
+						name: String::from(&label[1][ASSETS_PATH.len() + 14..]),
 						first_path: Path::Styles,
 						path: format!("Icons/Play.png"),
 						if_keep: true,
@@ -741,13 +742,13 @@ impl Window {
 					}, 
 					..Default::default()
 				}),
-				click_logic: Some(Logic::To(Router::PlayPage(format!("{}",&label[1][43..])))),
+				click_logic: Some(Logic::To(Router::PlayPage(format!("{}",&label[1][ASSETS_PATH.len() + 14..])))),
 				..Default::default()
 			}),
 			Component::Button(Button {
 				shape: vec!(Shapo {
 					shape: Shape::Image(Image {
-						name: String::from(&label[1][43..]),
+						name: String::from(&label[1][ASSETS_PATH.len() + 14..]),
 						first_path: Path::Styles,
 						path: format!("Icons/Close.png"),
 						if_keep: true,
@@ -765,7 +766,7 @@ impl Window {
 				..Default::default()
 			})
 		);
-		let mut window = Self::from_path(format!("data/data/com.saving.shapoist/assets/styles/{}/Window/Window.json", setting.ui_theme))?;
+		let mut window = Self::from_path(format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?;
 		window.id = 1003;
 		window.size = Vec2 {x: 82.0, y: 70.0};
 		window.position = Vec2 {x: 10.0, y: 10.0};

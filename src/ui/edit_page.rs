@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::ui::shape::style::ShapeAnimate;
 use egui::Rect;
 use egui::epaint::CubicBezierShape;
@@ -40,7 +41,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 	temp.project.timer()?;
 	let uspb = (60.0 * 1e6 / temp.project.chart.bpm) as u128;
 	let setting = read_settings()?;
-	let language = read_file_split(&format!("data/data/com.saving.shapoist/assets/language/{}/language.ini", setting.language))?;
+	let language = read_file_split(&format!("{}/assets/language/{}/language.ini",*ASSETS_PATH , setting.language))?;
 	let mut vec_back = vec!();
 	let mut input = ui.input_mut(|i| i.clone());
 	let mut if_shape_delete = false;
@@ -189,8 +190,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				// 					sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
 				// 					..Default::default()
 				// 				});
-				// 				let _ = create_dir(&format!("data/data/com.saving.shapoist/assets/chart/{}/image", temp.project.chart.mapname));
-				// 				copy_file(&path, &format!("data/data/com.saving.shapoist/assets/chart/{}/image/{}",temp.project.chart.mapname,name))?;
+				// 				let _ = create_dir(&format!("{}/assets/chart/{}/image",*ASSETS_PATH , temp.project.chart.mapname));
+				// 				copy_file(&path, &format!("{}/assets/chart/{}/image/{}",*ASSETS_PATH ,temp.project.chart.mapname,name))?;
 				// 				return Ok(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Add(Shape::Image))),to_json(&chart)?))
 				// 			}
 				// 		}
@@ -216,8 +217,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				// 				label: Some(vec!(temp.project.now_shape_id.to_string())),
 				// 				..Default::default()
 				// 			});
-				// 			let _ = create_dir(&format!("data/data/com.saving.shapoist/assets/chart/{}/image", temp.project.chart.mapname));
-				// 			copy_file(&path, &format!("data/data/com.saving.shapoist/assets/chart/{}/image/{}",temp.project.chart.mapname,file_name))?;
+				// 			let _ = create_dir(&format!("{}/assets/chart/{}/image",*ASSETS_PATH , temp.project.chart.mapname));
+				// 			copy_file(&path, &format!("{}/assets/chart/{}/image/{}",*ASSETS_PATH ,temp.project.chart.mapname,file_name))?;
 				// 			temp.project.now_shape_id = temp.project.now_shape_id + 1;
 				// 			ui.close_menu();
 				// 			return Ok(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Add(Shape::Image))),to_json(&chart)?))
@@ -426,7 +427,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							vec_back.push(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Style(PossibleStyleChange::Position))), to_json(&temp.project.chart)?))
 						},
 						RenderType::Note(j, n) => {
-							let mut note = &mut match temp.project.chart.note.get_mut(&j) {
+							let note = &mut match temp.project.chart.note.get_mut(&j) {
 								Some(t) => t,
 								None => return Err(ShapoError::SystemError(format!("cant find note to render")))
 							}[n];

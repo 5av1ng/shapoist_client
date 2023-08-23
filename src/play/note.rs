@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::ui::shapo::rotate;
 use crate::play::play_top::Touch;
 use crate::language::language::Language;
@@ -390,7 +391,7 @@ impl Chart {
 		ui.label(format!("{} {:.3}",Language::Code(160).get_language()?, (timer.read()? + self.offect + (setting.offect * 1e3) as u128) as f64 / uspb as f64));
 		let mut vec_back = Vec::new();
 		if !project.if_music_play && project.if_playing {
-			vec_back.push(Back::MusicPlay(format!("data/data/com.saving.shapoist/assets/chart/{}/song.mp3", self.mapname), self.bpm,0.0, (-(project.current_time as f32) + self.offect as f32) as f32 / 1e6));
+			vec_back.push(Back::MusicPlay(format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH , self.mapname), self.bpm,0.0, (-(project.current_time as f32) + self.offect as f32) as f32 / 1e6));
 		}
 		let mut timer_vec = vec!(timer.clone());
 		for i in 0..self.shape.len() {
@@ -515,7 +516,7 @@ impl Chart {
 		timer.set(time_read)?;
 		let mut vec_back = Vec::new();
 		if !self.if_playing {
-			vec_back.push(Back::MusicPlay(format!("data/data/com.saving.shapoist/assets/chart/{}/song.mp3", self.mapname), self.bpm, 0.0, self.offect as f32 / 1e6));
+			vec_back.push(Back::MusicPlay(format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH , self.mapname), self.bpm, 0.0, self.offect as f32 / 1e6));
 			self.if_playing = true;
 		}
 		let mut timer_vec = vec!(timer.clone());
@@ -732,10 +733,10 @@ impl Note {
 				let length = simpsons_rule_integration(1.0, &curve);
 				match self.judge_type {
 					JudgeType::Tap => {
-						path = format!("data/data/com.saving.shapoist/assets/styles/{}/Note/Tap.json",setting.ui_theme);
+						path = format!("{}/assets/styles/{}/Note/Tap.json",*ASSETS_PATH ,setting.ui_theme);
 					},
 					JudgeType::Slide => {
-						path = format!("data/data/com.saving.shapoist/assets/styles/{}/Note//Slide.json",setting.ui_theme);
+						path = format!("{}/assets/styles/{}/Note//Slide.json", *ASSETS_PATH,setting.ui_theme);
 					},
 				}
 				let note_json = read_file(&path)?;

@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use kira::clock::ClockSpeed;
 use kira::clock::ClockHandle;
 use std::collections::BTreeMap;
@@ -333,7 +334,7 @@ impl Page {
 				}
 				if let Some(t) = &self.display.play_top {
 					if (t.current_time.checked_sub(3 * 1e6 as u128)).is_some() {
-						self.play_music(format!("data/data/com.saving.shapoist/assets/chart/{}/song.mp3", t.chart.mapname), t.chart.bpm, 0.0, (t.chart.offect as f32 - t.current_time as f32 + 3.0 * 1e6) as f32 / 1e6)?;
+						self.play_music(format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH , t.chart.mapname), t.chart.bpm, 0.0, (t.chart.offect as f32 - t.current_time as f32 + 3.0 * 1e6) as f32 / 1e6)?;
 					}
 				}
 				self.close_window(1004);
@@ -358,9 +359,9 @@ impl Page {
 			Back::Change(type_to_change,json) => {
 				match type_to_change {
 					ChangeType::Setting(_) => {
-						remove_file("data/data/com.saving.shapoist/assets/setting.json")?;
-						create_file("data/data/com.saving.shapoist/assets/setting.json")?;
-						write_file("data/data/com.saving.shapoist/assets/setting.json",json)?;
+						remove_file(&format!("{}/assets/setting.json", *ASSETS_PATH))?;
+						create_file(&format!("{}/assets/setting.json", *ASSETS_PATH))?;
+						write_file(&format!("{}/assets/setting.json", *ASSETS_PATH),json)?;
 					},
 					ChangeType::ChartTemp(t) => {
 						let setting = read_settings()?;
@@ -410,7 +411,7 @@ impl Page {
 					return Err(ShapoError::SystemError(format!("invailed chart info input")));
 				}
 				self.temp.project = Project::from_chart(self.temp.chart.clone());
-				create_dir(&format!("data/data/com.saving.shapoist/assets/chart/{}",self.temp.chart.mapname))?;
+				create_dir(&format!("{}/assets/chart/{}",*ASSETS_PATH ,self.temp.chart.mapname))?;
 				fn error(temp: &Temp) -> Result<(),ShapoError> {
 					let split:Vec<&str> = temp.music_path.split("\\\\").collect(); 
 					let mut actual_music_path = String::new();
@@ -424,22 +425,22 @@ impl Page {
 						actual_image_path = actual_image_path + "/" + a
 					} 
 					actual_image_path = actual_image_path[2..actual_image_path.len()-1].to_string();
-					create_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/map.shapoistmap",temp.chart.mapname))?;
-					write_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/map.shapoistmap",temp.chart.mapname), &to_json(&temp.chart)?)?;
-					create_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/map.shapoistproject",temp.chart.mapname))?;
-					write_file(&format!("data/data/com.saving.shapoist/assets/chart/{}/map.shapoistproject",temp.chart.mapname), &to_json(&temp.project)?)?;
-					copy_file(&actual_music_path, &format!("data/data/com.saving.shapoist/assets/chart/{}/song.mp3",temp.chart.mapname))?;
-					copy_file(&actual_image_path, &format!("data/data/com.saving.shapoist/assets/chart/{}/image.png",temp.chart.mapname))?;
+					create_file(&format!("{}/assets/chart/{}/map.shapoistmap",*ASSETS_PATH ,temp.chart.mapname))?;
+					write_file(&format!("{}/assets/chart/{}/map.shapoistmap", *ASSETS_PATH,temp.chart.mapname), &to_json(&temp.chart)?)?;
+					create_file(&format!("{}/assets/chart/{}/map.shapoistproject",*ASSETS_PATH ,temp.chart.mapname))?;
+					write_file(&format!("{}/assets/chart/{}/map.shapoistproject",*ASSETS_PATH,temp.chart.mapname), &to_json(&temp.project)?)?;
+					copy_file(&actual_music_path, &format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH,temp.chart.mapname))?;
+					copy_file(&actual_image_path, &format!("{}/assets/chart/{}/image.png", *ASSETS_PATH,temp.chart.mapname))?;
 					Ok(())
 				}
 				match error(&self.temp) {
 					Ok(_) => {},
 					Err(e) => {
-						remove_path(&format!("data/data/com.saving.shapoist/assets/chart/{}",self.temp.chart.mapname))?;
+						remove_path(&format!("{}/assets/chart/{}",*ASSETS_PATH,self.temp.chart.mapname))?;
 						return Err(e);
 					}
 				}
-				self.temp.now_project_path = format!("data/data/com.saving.shapoist/assets/chart/{}",self.temp.chart.mapname);
+				self.temp.now_project_path = format!("{}/assets/chart/{}",*ASSETS_PATH,self.temp.chart.mapname);
 				self.stop_sound()?;
 				self.push(Router::EditPage);
 			},

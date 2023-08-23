@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::log_export::log_export::print_log;
 use rand::Rng;
 use crate::setting::setting::read_settings;
@@ -22,7 +23,7 @@ impl Language {
 		match self {
 			Language::Code(t) => {
 				let setting = read_settings()?;
-				let path = format!("data/data/com.saving.shapoist/assets/language/{}/language.ini", &setting.language);
+				let path = format!("{}/assets/language/{}/language.ini", *ASSETS_PATH , &setting.language);
 				let language = read_file_split(&path)?;
 				if t < &language.len() {
 					let send = &language[*t];
@@ -39,7 +40,7 @@ impl Language {
 							Ok(t) => t.language,
 							Err(_) => "en-US".to_string(),
 						};
-						let path = format!("data/data/com.saving.shapoist/assets/language/{}/error.ini", &setting);
+						let path = format!("{}/assets/language/{}/error.ini",*ASSETS_PATH , &setting);
 						let language = match read_file_split(&path) {
 							Ok(u) => u,
 							Err(_) => vec!("Error! ".to_string(),"Ignore".to_string(), "Exit".to_string())
@@ -58,7 +59,7 @@ impl Language {
 
 	pub fn random_tip() -> Result<Self,ShapoError> {
 		let setting = read_settings()?;
-		let path = format!("data/data/com.saving.shapoist/assets/language/{}/tip.ini", &setting.language);
+		let path = format!("{}/assets/language/{}/tip.ini",*ASSETS_PATH , &setting.language);
 		let language = read_file_split(&path)?;
 		if language.is_empty(){
 			print_log(&format!("[ERROR] tip file is empty"));

@@ -1,3 +1,4 @@
+use crate::ASSETS_PATH;
 use crate::ui::page::Temp;
 use std::collections::HashMap;
 use egui::TextureId;
@@ -155,7 +156,7 @@ impl WindowToOpen {
 			WindowToOpen::FromBuilt(t) => Ok(t.clone()),
 			WindowToOpen::FromPath(p) => {
 				let setting = read_settings()?;
-				Ok(Window::from_path(format!("data/data/com.saving.shapoist/assets/styles/{}/{}", setting.ui_theme, p))?)
+				Ok(Window::from_path(format!("{}/assets/styles/{}/{}",*ASSETS_PATH, setting.ui_theme, p))?)
 			},
 			WindowToOpen::FromLabel(l) => {
 				Ok(Window::from_label(l.clone()))
@@ -224,13 +225,13 @@ impl Logic {
 			0 => Logic::To(Router::MainPage),
 			1 => Logic::OpenWindow(WindowToOpen::FromBuilt(Window::default())),
 			2 => Logic::CloseWindow(1000),
-			3 => Logic::CreateDir("data/data/com.saving.shapoist/assets/garbage/".to_string()),
-			4 => Logic::Remove(PathToRemove::FromPath("data/data/com.saving.shapoist/assets/garbage/test.garbage".to_string())),
-			5 => Logic::Read("data/data/com.saving.shapoist/assets/garbage/test.garbage".to_string()),
-			6 => Logic::Write(["data/data/com.saving.shapoist/assets/garbage/test.garbage".to_string(), "Hello World! ".to_string()]),
-			7 => Logic::CreateFile("data/data/com.saving.shapoist/assets/garbage/test.garbage".to_string()),
+			3 => Logic::CreateDir("./assets/garbage/".to_string()),
+			4 => Logic::Remove(PathToRemove::FromPath("./assets/garbage/test.garbage".to_string())),
+			5 => Logic::Read("./assets/garbage/test.garbage".to_string()),
+			6 => Logic::Write(["./assets/garbage/test.garbage".to_string(), "Hello World! ".to_string()]),
+			7 => Logic::CreateFile("./assets/garbage/test.garbage".to_string()),
 			8 => Logic::Animation(1),
-			9 => Logic::CopyFile(["data/data/com.saving.shapoist/assets/garbage/test.garbage".to_string(), "data/data/com.saving.shapoist/assets/garbage/another.garbage".to_string()]),
+			9 => Logic::CopyFile(["./assets/garbage/test.garbage".to_string(), "./assets/garbage/another.garbage".to_string()]),
 			_=> unreachable!()
 		}
 	}
@@ -251,13 +252,13 @@ fn id_to_string(id: usize) -> String {
 		0 => "Logic::To(Router::MainPage)",
 		1 => "Logic::OpenWindow(Window::default())",
 		2 => "Logic::CloseWindow(1000)",
-		3 => "Logic::CreateDir(\"data/data/com.saving.shapoist/assets/garbage/\")",
-		4 => "Logic::Remove(\"data/data/com.saving.shapoist/assets/garbage/test.garbage\")",
-		5 => "Logic::Read(\"data/data/com.saving.shapoist/assets/garbage/test.garbage\")",
-		6 => "Logic::Write([\"data/data/com.saving.shapoist/assets/garbage/test.garbage\", \"Hello World! \"])",
-		7 => "Logic::Create(\"data/data/com.saving.shapoist/assets/garbage/test.garbage\")",
+		3 => "Logic::CreateDir(\"./assets/garbage/\")",
+		4 => "Logic::Remove(\"./assets/garbage/test.garbage\")",
+		5 => "Logic::Read(\"./assets/garbage/test.garbage\")",
+		6 => "Logic::Write([\"./assets/garbage/test.garbage\", \"Hello World! \"])",
+		7 => "Logic::Create(\"./assets/garbage/test.garbage\")",
 		8 => "Logic::Animation(1)",
-		9 => "Logic::CopyFile(\"data/data/com.saving.shapoist/assets/garbage/test.garbage\", \"data/data/com.saving.shapoist/assets/garbage/another.garbage\"",
+		9 => "Logic::CopyFile(\"./assets/garbage/test.garbage\", \"./assets/garbage/another.garbage\"",
 		_=> unreachable!()
 	}.to_string();
 	back
