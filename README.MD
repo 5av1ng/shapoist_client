@@ -46,7 +46,33 @@ Shapoist 判定方式分为两种，判定等级分为五种。
 
 项目使用 Rust 编写，各个部分的开发进度见 Src 内 ReadMe 注解。
 
-**警告**：Shapoist 的代码未经系统化整理且实现某些功能的方式比较基础（低情商：屎）你将看到包括但不限于：多层嵌套，复制粘贴式复用，无注释……
+**警告**：Shapoist 的代码未经系统化整理且实现某些功能的方式比较基础（低情商：屎）你将看到包括但不限于：多层嵌套，复制粘贴式复用，无注释，随处可见的 Clone……
+
+将仓库克隆到本地后运行
+
+```sh
+cargo run --features="desktop"
+```
+
+后边可以加入 debug 参数来应用一些 debug 功能（未完全实装）
+
+加入 mute 参数禁用声音
+
+或者要在安卓环境运行，使用
+
+```sh
+./compile.sh
+```
+
+或者
+
+```sh
+cargo ndk -t arm64-v8a -o app/src/main/jniLibs/  build
+./gradlew build
+./gradlew installDebug
+```
+
+todo list 见 ./src/README.MD
 
 ## 开源许可证
 
