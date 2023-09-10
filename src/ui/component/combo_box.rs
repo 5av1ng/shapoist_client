@@ -14,6 +14,7 @@ use crate::ui::ui::Content;
 use crate::ui::shapo::Shapo;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct ComboBox {
 	pub shape: Vec<Shapo>,
 	pub name: Language,
@@ -22,6 +23,20 @@ pub struct ComboBox {
 	pub possible_value_json: Vec<String>,
 	pub possible_value_show: Vec<String>,
 	pub change_type: ChangeType
+}
+
+impl Default for ComboBox {
+	fn default() -> Self {
+		Self {
+			shape: vec!(),
+			name: Language::Text(String::from("TEST")),
+			value: String::new(),
+			value_show: String::new(),
+			possible_value_json: vec!(),
+			possible_value_show: vec!(),
+			change_type: ChangeType::ProjectPath
+		}
+	}
 }
 
 impl Content for ComboBox {

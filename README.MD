@@ -40,7 +40,7 @@ Shapoist 判定方式分为两种，判定等级分为五种。
 
 ### 支持的平台
 
-理论上来说 Windows MacOS Linux （[Android 见此](https://github.com/5av1ng/adgk-shapoist)） 都可以运行，但是后两者需要自行编译。
+理论上来说 Windows Android MacOS Linux 都可以运行，但是后两者需要自行编译。
 
 ## 关于开发
 

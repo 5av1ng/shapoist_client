@@ -1,0 +1,22 @@
+draggable = true
+model = false
+id = 1_002
+content = [ ]
+if_enabled = true
+label = [ "Setting" ]
+if_labeled = false
+
+[position]
+x = 15
+y = 15
+
+[size]
+x = 30
+y = 70
+
+[resizeable]
+x = 20
+y = 65
+
+[title]
+Code = 9

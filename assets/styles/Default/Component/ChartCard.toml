@@ -1,0 +1,135 @@
+[[shape]]
+if_delete = false
+animation = [ ]
+label = [ "Image" ]
+
+  [shape.style]
+  if_absolute = false
+  rotate = 0
+  fill = [ 0, 0, 0, 100 ]
+  anchor = [ "Center", "Center" ]
+  text_size = 12
+
+    [shape.style.position]
+    x = 22
+    y = 15
+
+    [shape.style.size]
+    x = 1
+    y = 1
+
+    [shape.style.rotate_center]
+    x = 0
+    y = 0
+
+    [shape.style.stroke]
+    width = 0
+    color = [ 0, 0, 0, 0 ]
+
+[shape.style.volume.min]
+x = 22
+y = 15
+
+[shape.style.volume.max]
+x = 46
+y = 45
+
+[shape.shape.Image]
+name = "Test"
+first_path = "Chart"
+path = "Test/image.png"
+if_keep = true
+
+  [shape.shape.Image.bottom_right_point]
+  x = 24
+  y = 13.5
+
+[[shape]]
+if_delete = false
+animation = [ ]
+
+  [shape.style]
+  if_absolute = false
+  rotate = 0
+  fill = [ 0, 0, 0, 150 ]
+  anchor = [ "Center", "Center" ]
+  text_size = 12
+
+    [shape.style.position]
+    x = 22
+    y = 15
+
+    [shape.style.size]
+    x = 1
+    y = 1
+
+    [shape.style.rotate_center]
+    x = 0
+    y = 0
+
+    [shape.style.stroke]
+    width = 0
+    color = [ 0, 0, 0, 0 ]
+
+[shape.style.volume.min]
+x = 22
+y = 15
+
+[shape.style.volume.max]
+x = 46
+y = 45
+
+[shape.shape.Rectangle]
+if_keep = true
+
+  [shape.shape.Rectangle.bottom_right_point]
+  x = 24.3
+  y = 14
+
+  [shape.shape.Rectangle.rounding]
+  nw = 0
+  ne = 0
+  sw = 0
+  se = 0
+
+[[shape]]
+if_delete = false
+animation = [ ]
+label = [ "Title" ]
+
+  [shape.style]
+  if_absolute = false
+  rotate = 0
+  fill = [ 255, 255, 255, 255 ]
+  anchor = [ "Min", "Center" ]
+  text_size = 12
+
+    [shape.style.position]
+    x = 12
+    y = 5
+
+    [shape.style.size]
+    x = 1
+    y = 1
+
+    [shape.style.rotate_center]
+    x = 0
+    y = 0
+
+    [shape.style.stroke]
+    width = 0
+    color = [ 0, 0, 0, 0 ]
+
+[shape.style.volume.min]
+x = 29
+y = 15
+
+[shape.style.volume.max]
+x = 46
+y = 45
+
+[shape.shape.Text.text]
+Text = "TEST1111111111111111111111111111111111111111111111111111111111111111"
+
+[click_logic.OpenWindow]
+FromLabel = [ "Chart 1" ]

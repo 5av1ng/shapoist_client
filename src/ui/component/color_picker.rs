@@ -13,12 +13,25 @@ use crate::ui::shapo::Shapo;
 use egui::Color32;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct ColorPicker {
 	pub text: Language,
 	pub shape: Vec<Shapo>,
 	pub value: Color32,
 	pub change_type: ChangeType,
 	pub if_open: bool
+}
+
+impl Default for ColorPicker {
+	fn default() -> Self {
+		Self {
+			text: Language::Text(String::from("TEST")),
+			shape: vec!(),
+			value: Color32::TRANSPARENT,
+			change_type: ChangeType::ProjectPath,
+			if_open: false
+		}
+	}
 }
 
 impl Content for ColorPicker {

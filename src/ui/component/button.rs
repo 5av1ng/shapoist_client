@@ -57,6 +57,7 @@ pub enum PathToRemove {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct Button {
 	pub shape: Vec<Shapo>,
 	pub click_logic: Option<Logic>,
@@ -96,6 +97,14 @@ impl Default for Button {
 }
 
 impl Button {
+	// pub fn empty() -> Self {
+	// 	Self {
+	// 		shape: vec!(),
+	// 		click_logic: None,
+	// 		hold_logic: None
+	// 	}
+	// }
+
 	fn shape(&mut self, ui: &mut egui::Ui, size: &Vec2, timer: &mut Vec<Timer>, offect: Option<Vec2>, if_enabled: bool, texture: &HashMap<TextureId,TextureHandle>) 
 	-> Result<(Response,Vec<Back>), ShapoError>{
 		let mut min_size = Vec2{x:20000.0,y:20000.0};

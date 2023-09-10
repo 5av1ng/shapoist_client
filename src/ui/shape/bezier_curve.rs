@@ -11,6 +11,7 @@ use egui::epaint::CircleShape;
 use egui::Pos2;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct CubicBezier {
 	pub points : [Pos2; 4],
 	pub if_close: bool

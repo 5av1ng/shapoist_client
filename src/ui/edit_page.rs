@@ -39,7 +39,7 @@ use crate::play::note::EditPages;
 
 pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bool, texture: &HashMap<TextureId,TextureHandle>, temp: &mut Temp, _file: &Vec<DroppedFile>) -> Result<Vec<Back>, ShapoError> {
 	temp.project.timer()?;
-	let uspb = (60.0 * 1e6 / temp.project.chart.bpm) as u128;
+	let uspb = (60.0 * 1e6 / temp.project.chart.bpm) as u64;
 	let setting = read_settings()?;
 	let language = read_file_split(&format!("{}/assets/language/{}/language.ini",*ASSETS_PATH , setting.language))?;
 	let mut vec_back = vec!();
@@ -79,37 +79,37 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 		if current_beat < 0.0 {
 			current_beat = 0.0
 		}
-		temp.project.current_time = (current_beat * uspb as f64) as u128
+		temp.project.current_time = (current_beat * uspb as f64) as u64
 	}else if input.consume_key(Modifiers::CTRL, Key::ArrowLeft) {
 		let mut current_beat = temp.project.current_time as f64 / uspb as f64 - 4.0;
 		if current_beat < 0.0 {
 			current_beat = 0.0
 		}
-		temp.project.current_time = (current_beat * uspb as f64) as u128
+		temp.project.current_time = (current_beat * uspb as f64) as u64
 	}else if input.consume_key(Modifiers::CTRL | Modifiers::SHIFT, Key::ArrowLeft) {
 		let mut current_beat = temp.project.current_time as f64 / uspb as f64 - 16.0;
 		if current_beat < 0.0 {
 			current_beat = 0.0
 		}
-		temp.project.current_time = (current_beat * uspb as f64) as u128
+		temp.project.current_time = (current_beat * uspb as f64) as u64
 	}else if input.consume_key(Modifiers::NONE, Key::ArrowRight) {
 		let mut current_beat = temp.project.current_time as f64 / uspb as f64 + 1.0;
 		if current_beat > 2000.0 {
 			current_beat = 2000.0
 		}
-		temp.project.current_time = (current_beat * uspb as f64) as u128
+		temp.project.current_time = (current_beat * uspb as f64) as u64
 	}else if input.consume_key(Modifiers::CTRL, Key::ArrowRight) {
 		let mut current_beat = temp.project.current_time as f64 / uspb as f64 + 4.0;
 		if current_beat > 2000.0 {
 			current_beat = 2000.0
 		}
-		temp.project.current_time = (current_beat * uspb as f64) as u128
+		temp.project.current_time = (current_beat * uspb as f64) as u64
 	}else if input.consume_key(Modifiers::CTRL | Modifiers::SHIFT, Key::ArrowRight) {
 		let mut current_beat = temp.project.current_time as f64 / uspb as f64 + 16.0;
 		if current_beat > 2000.0 {
 			current_beat = 2000.0
 		}
-		temp.project.current_time = (current_beat * uspb as f64) as u128
+		temp.project.current_time = (current_beat * uspb as f64) as u64
 	}
 
 	let mut current_beat = temp.project.current_time as f64 / uspb as f64;
@@ -128,7 +128,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				if ui.button(language[54].clone()).clicked() {
 					chart.shape.push(Shapo{
 						shape: Shape::Circle(Circle::default()),
-						sustain_time: Some((none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb, (current_beat as u128 + 4) * uspb)),
+						sustain_time: Some((none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb, (current_beat as u64 + 4) * uspb)),
 						label: Some(vec!(temp.project.now_shape_id.to_string())),
 						..Default::default()
 					});
@@ -139,7 +139,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				if ui.button(language[55].clone()).clicked() {
 					chart.shape.push(Shapo{
 						shape: Shape::Rectangle(Rectangle::default()),
-						sustain_time: Some((none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb, (current_beat as u128 + 4) * uspb)),
+						sustain_time: Some((none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb, (current_beat as u64 + 4) * uspb)),
 						label: Some(vec!(temp.project.now_shape_id.to_string())),
 						..Default::default()
 					});
@@ -155,7 +155,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							fill: Color32::TRANSPARENT,
 							..Default::default()
 						},
-						sustain_time: Some((none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb, (current_beat as u128 + 4) * uspb)),
+						sustain_time: Some((none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb, (current_beat as u64 + 4) * uspb)),
 						label: Some(vec!(temp.project.now_shape_id.to_string())),
 						..Default::default()
 					});
@@ -187,7 +187,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				// 						registered_info: None
 				// 					}), 
 				// 					label: Some(vec!(temp.project.now_shape_id.to_string())),
-				// 					sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+				// 					sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
 				// 					..Default::default()
 				// 				});
 				// 				let _ = create_dir(&format!("{}/assets/chart/{}/image",*ASSETS_PATH , temp.project.chart.mapname));
@@ -213,7 +213,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				// 					if_keep: false,
 				// 					registered_info: None
 				// 				}), 
-				// 				sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+				// 				sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
 				// 				label: Some(vec!(temp.project.now_shape_id.to_string())),
 				// 				..Default::default()
 				// 			});
@@ -242,8 +242,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					}.push(Note{
 						id: temp.project.now_note_id,
 						judge_field_id: temp.project.now_judge_field_id,
-						start_time: current_beat as u128 * uspb,
-						click_time: current_beat as u128 * uspb,
+						start_time: current_beat as u64 * uspb,
+						click_time: current_beat as u64 * uspb,
 						judge_type: JudgeType::Tap,
 						..Default::default()
 					});
@@ -258,8 +258,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					}.push(Note{
 						id: temp.project.now_note_id,
 						judge_field_id: temp.project.now_judge_field_id,
-						start_time: none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb,
-						click_time: current_beat as u128 * uspb,
+						start_time: none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb,
+						click_time: current_beat as u64 * uspb,
 						judge_type: JudgeType::Slide,
 						..Default::default()
 					});
@@ -275,8 +275,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 			if ui.button(language[52].clone()).clicked() {
 				let mut chart = temp.project.chart.clone();
 				chart.judge_field.push(JudgeField{
-					start_time: none_to_zero(&(current_beat as u128).checked_sub(4)) * uspb,
-					end_time: (current_beat as u128) * uspb,
+					start_time: none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb,
+					end_time: (current_beat as u64) * uspb,
 					id: temp.project.new_judge_field_id,
 					..Default::default()
 				});
@@ -360,7 +360,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 		let mut current_beat = temp.project.current_time as f32 / uspb as f32;
 		ui.add(egui::Slider::new(&mut current_beat, 0.0..=2000.0));
 		if current_beat != temp.project.current_time as f32 / uspb as f32 {
-			temp.project.current_time = (current_beat * uspb as f32) as u128;
+			temp.project.current_time = (current_beat * uspb as f32) as u64;
 		}
 
 		Ok(vec_back)
@@ -493,7 +493,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 			ui.label(language[131].clone());
 			let response = ui.add(egui::TextEdit::singleline(&mut offect).hint_text(language[131].clone()));
 			if response.changed() {
-				let offect: u128 = match offect.parse() {
+				let offect: u64 = match offect.parse() {
 					Ok(t) => t,
 					Err(_) => return Err(ShapoError::SystemError(format!("not a number"))),
 				};
@@ -506,7 +506,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 			let mut current_beat = temp.project.current_time as f32 / uspb as f32;
 			ui.add(egui::Slider::new(&mut current_beat, 0.0..=2000.0));
 			if current_beat != temp.project.current_time as f32 / uspb as f32 {
-				temp.project.current_time = (current_beat * uspb as f32) as u128;
+				temp.project.current_time = (current_beat * uspb as f32) as u64;
 			}
 			ui.end_row();
 
@@ -556,7 +556,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				let mut start_beat = temp.project.chart.judge_field[id].start_time as f64 / uspb as f64;
 				ui.add(egui::Slider::new(&mut start_beat, 0.0..=2000.0).step_by(0.0001));
 				if start_beat != temp.project.chart.judge_field[id].start_time as f64 / uspb as f64 {
-					temp.project.chart.judge_field[id].start_time = (start_beat * uspb as f64) as u128
+					temp.project.chart.judge_field[id].start_time = (start_beat * uspb as f64) as u64
 				}
 				ui.end_row();
 
@@ -564,7 +564,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				let mut end_beat = temp.project.chart.judge_field[id].end_time as f64 / uspb as f64;
 				ui.add(egui::Slider::new(&mut end_beat, 0.0..=2000.0).step_by(0.0001));
 				if end_beat != temp.project.chart.judge_field[id].end_time as f64 / uspb as f64 {
-					temp.project.chart.judge_field[id].end_time = (end_beat * uspb as f64) as u128
+					temp.project.chart.judge_field[id].end_time = (end_beat * uspb as f64) as u64
 				}
 				ui.end_row();
 
@@ -658,7 +658,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 								if ui.button(language[54].clone()).clicked() {
 									shape = Shapo{
 										shape: Shape::Circle(Circle::default()),
-										sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+										sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
 										label: Some(vec!(temp.project.now_shape_id.to_string())),
 										..Default::default()
 									};
@@ -668,7 +668,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 								if ui.button(language[55].clone()).clicked() {
 									shape = Shapo{
 										shape: Shape::Rectangle(Rectangle::default()),
-										sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+										sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
 										label: Some(vec!(temp.project.now_shape_id.to_string())),
 										..Default::default()
 									};
@@ -678,7 +678,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 								if ui.button(language[57].clone()).clicked() {
 									shape = Shapo{
 										shape: Shape::CubicBezier(CubicBezier::default()),
-										sustain_time: Some((current_beat as u128 * uspb, (current_beat as u128 + 4) * uspb)),
+										sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
 										label: Some(vec!(temp.project.now_shape_id.to_string())),
 										..Default::default()
 									};
@@ -738,7 +738,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							ui.label(language[119].clone());
 							ui.add(egui::Slider::new(&mut start_time_beat, 0.0..=2000.0).step_by(0.0001));
 							if start_time_beat != new_note.start_time as f64 / uspb as f64 {
-								new_note.start_time = (start_time_beat * uspb as f64) as u128;
+								new_note.start_time = (start_time_beat * uspb as f64) as u64;
 								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartTime)), String::new());
 							}
 							ui.end_row();
@@ -746,7 +746,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							ui.label(language[130].clone());
 							ui.add(egui::Slider::new(&mut end_time_beat, 0.0..=2000.0).step_by(0.0001));
 							if end_time_beat != new_note.click_time as f64 / uspb as f64 {
-								new_note.click_time = (end_time_beat * uspb as f64) as u128;
+								new_note.click_time = (end_time_beat * uspb as f64) as u64;
 								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::ClickTime)), String::new());
 							}
 							ui.end_row();
@@ -883,7 +883,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 	Ok(vec_back)
 }
 
-fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, uspb: &u128) -> Result<Back, ShapoError> {
+fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, uspb: &u64) -> Result<Back, ShapoError> {
 	let backup = shape.clone();
 	let mut back = egui::Grid::new("dafu678936ikjhjzxc").show(ui, |ui| -> Result<Back, ShapoError> {
 		let mut back = Back::Nothing;
@@ -915,7 +915,7 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 			ui.label(language[119].clone());
 			ui.add(egui::Slider::new(&mut start_time_beat, 0.0..=2000.0).step_by(0.0001));
 			if start_time_beat != start_time as f64 / *uspb as f64 {
-				shape.sustain_time = Some(((start_time_beat * *uspb as f64) as u128, end_time));
+				shape.sustain_time = Some(((start_time_beat * *uspb as f64) as u64, end_time));
 				back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::SustainTime)), String::new());
 			}
 			ui.end_row();
@@ -923,7 +923,7 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 			ui.label(language[130].clone());
 			ui.add(egui::Slider::new(&mut end_time_beat, 0.0..=2000.0).step_by(0.0001));
 			if end_time_beat != end_time as f64 / *uspb as f64 {
-				shape.sustain_time = Some((start_time ,(end_time_beat * *uspb as f64) as u128));
+				shape.sustain_time = Some((start_time ,(end_time_beat * *uspb as f64) as u64));
 				back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::SustainTime)), String::new());
 			}
 			ui.end_row();
@@ -1189,7 +1189,7 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 					let mut divided = shape.animation[a].start_time.unwrap() as f64 / *uspb as f64;
 					ui.add(egui::Slider::new(&mut divided , 0.0..=2000.0).step_by(0.0001));
 					if divided != shape.animation[a].start_time.unwrap() as f64 / *uspb as f64 {
-						shape.animation[a].start_time = Some((divided * *uspb as f64) as u128)
+						shape.animation[a].start_time = Some((divided * *uspb as f64) as u64)
 					}
 					ui.end_row();
 
@@ -1197,7 +1197,7 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 					let mut divided = shape.animation[a].animate_time as f64 / *uspb as f64;
 					ui.add(egui::Slider::new(&mut divided , 0.0..=2000.0).step_by(0.0001));
 					if divided != shape.animation[a].animate_time as f64 / *uspb as f64 {
-						shape.animation[a].animate_time = (divided * *uspb as f64) as u128
+						shape.animation[a].animate_time = (divided * *uspb as f64) as u64
 					}
 					ui.end_row();
 
@@ -1342,7 +1342,7 @@ fn bezier_curve_texture(ui: &mut egui::Ui, cb: &mut CubicBezier, language: &Vec<
 	ui.end_row();
 }
 
-fn none_to_zero(input: &Option<u128>) -> u128 {
+fn none_to_zero(input: &Option<u64>) -> u64 {
 	match input {
 		Some(t) => return *t,
 		None => return 0,

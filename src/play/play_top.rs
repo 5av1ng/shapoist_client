@@ -1,16 +1,16 @@
+use crate::ui::ui::Component;
+use crate::system::system_function::parse_json_form_path;
 use crate::ASSETS_PATH;
 use crate::language::language::Language;
 use crate::create_file;
 use crate::system::system_function::remove_file;
-use crate::system::system_function::to_json;
+use crate::system::system_function::to_toml;
 use crate::system::system_function::write_file;
-use crate::system::system_function::prase_json_form_path;
-use crate::system::system_function::prase_json;
+use crate::system::system_function::parse_toml;
 use crate::ui::ui::Router;
 use std::collections::HashMap;
 use egui::TextureId;
 use egui::TextureHandle;
-use crate::ui::shapo::Shapo;
 use crate::setting::setting::read_settings;
 use egui::Vec2;
 use crate::ui::ui::Back;
@@ -20,17 +20,20 @@ use crate::play::note::*;
 use crate::play::timer::Timer;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct Replay {
 	clicks: Vec<Click>
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct Click {
-	pub click_time: Option<u128>,
+	pub click_time: Option<u64>,
 	pub note_position: Vec2
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct PlayInfo {
 	pub score: usize,
 	pub accuracy: f32,
@@ -43,6 +46,7 @@ pub struct PlayInfo {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct PlayTop {
 	pub timer: Timer,
 	pub chart: Chart,
@@ -54,15 +58,26 @@ pub struct PlayTop {
 	pub replay: Replay,
 	pub if_paused: bool,
 	pub path: String,
-	pub current_time: u128,
+	pub current_time: u64,
 	pub touch: HashMap<u64, Touch>
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct Touch {
 	pub time: usize,
 	pub position: Vec2,
 	pub if_click: bool
+}
+
+impl Default for Touch {
+	fn default() -> Self {
+		Self {
+			time: 0,
+			position: Vec2::new(0.0,0.0),
+			if_click: false
+		}
+	}
 }
 
 impl Touch {
@@ -91,7 +106,7 @@ impl Default for PlayInfo {
 
 impl PlayInfo {
 	pub fn read(mapname: String) -> Self {
-		match prase_json_form_path(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname)) {
+		match parse_json_form_path(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname)) {
 			Ok(t) => return t,
 			Err(_) => return Self::default(),
 		}
@@ -108,16 +123,16 @@ impl PlayInfo {
 
 		let _ = remove_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname));
 		create_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname))?;
-		write_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname), &to_json(&read)?)?;
+		write_file(&format!("{}/assets/chart/{}/play.info",*ASSETS_PATH , mapname), &to_toml(&read)?)?;
 		Ok(delta)
 	}
 }
 
-impl PlayTop {
-	pub fn default() -> Result<Self,ShapoError> {
+impl Default for PlayTop {
+	fn default() -> Self {
 		let mut timer = Timer::new(1);
-		timer.start()?;
-		Ok(Self {
+		timer.start().unwrap();
+		Self {
 			timer,
 			chart: Chart::default(),
 			score: 0,
@@ -125,14 +140,16 @@ impl PlayTop {
 			combo: 0,
 			accuracy: 1.00,
 			judge_vec: vec!(),
-			replay: Replay::new(),
+			replay: Replay::default(),
 			if_paused: false,
 			path: String::new(),
 			current_time: 0,
 			touch: HashMap::new()
-		})
+		}
 	}
+}
 
+impl PlayTop {
 	pub fn get_info(&self) -> PlayInfo {
 		let mut immaculate_number = 0;
 		let mut extra_number = 0;
@@ -174,7 +191,7 @@ impl PlayTop {
 	}
 
 	pub fn read(path: &String) -> Result<Self, ShapoError> {
-		let chart:Chart = prase_json_form_path(&path)?;
+		let chart:Chart = parse_json_form_path(&path)?;
 		let mut timer = Timer::new(1);
 		timer.start()?;
 		Ok(Self {
@@ -183,7 +200,7 @@ impl PlayTop {
 			score: 0,
 			max_combo: 0,
 			combo: 0,
-			replay: Replay::new(),
+			replay: Replay::default(),
 			accuracy: 1.00,
 			judge_vec: vec!(),
 			if_paused: false,
@@ -195,13 +212,13 @@ impl PlayTop {
 
 	pub fn play(&mut self) -> Result<Back,ShapoError> {
 		// self.timer.start()?;
-		let delta = match self.current_time.checked_sub(3 * 1e6 as u128) {
+		let delta = match self.current_time.checked_sub(3 * 1e6 as u64) {
 			Some(t) => t,
 			None => 0,
 		};
 		self.current_time = delta;
 		self.timer()?;
-		// self.timer.set(3 * 1e6 as u128)?;
+		// self.timer.set(3 * 1e6 as u64)?;
 		self.if_paused = false;
 		Ok(Back::Play)
 	}
@@ -300,24 +317,25 @@ impl PlayTop {
 					for (judge_id, note_id) in t {
 						let setting = read_settings()?;
 						let read = &self.chart.note.get(&judge_id).unwrap()[note_id];
-						let click_effect_json = read_file(&format!("{}/assets/styles/{}/Note/ClickEffect.json",*ASSETS_PATH ,setting.ui_theme))?;
-						let mut click_effect_read: Vec<Shapo>;
-						click_effect_read = prase_json(&click_effect_json)?;
-						for a in &mut click_effect_read {
-							a.style.position = match read.shape.clone() {
-								Some(t) => t,
-								None => return Err(ShapoError::SystemError(format!("????????????"))),
-							}[0].style.position;
-							a.style.stroke.color = read.judge.to_color32()?;
-							let time = match read.clicked_time {
-								Some(t) => t,
-								None => 0
-							};
-							a.animation[1].start_time = Some(time + a.animation[0].animate_time);
-							a.animation[0].start_time = read.clicked_time;
-						}
-						for a in click_effect_read {
-							self.chart.shape.push(a);
+						let click_effect_json = read_file(&format!("{}/assets/styles/{}/Note/ClickEffect.toml",*ASSETS_PATH ,setting.ui_theme))?;
+						let click_effect_read: Component = parse_toml(&click_effect_json)?;
+						if let Component::Shapo(mut ce) = click_effect_read {
+							for a in &mut ce {
+								a.style.position = match read.shape.clone() {
+									Some(t) => t,
+									None => return Err(ShapoError::SystemError(format!("????????????"))),
+								}[0].style.position;
+								a.style.stroke.color = read.judge.to_color32()?;
+								let time = match read.clicked_time {
+									Some(t) => t,
+									None => 0
+								};
+								a.animation[1].start_time = Some(time + a.animation[0].animate_time);
+								a.animation[0].start_time = read.clicked_time;
+							}
+							for a in ce {
+								self.chart.shape.push(a);
+							}
 						}
 						if let Judge::Miss = read.judge.clone(){}
 						else {
@@ -363,10 +381,19 @@ impl PlayTop {
 	}
 }
 
-impl Replay {
-	fn new() -> Self {
+impl Default for Replay {
+	fn default() -> Self {
 		Self {
 			clicks: vec!()
+		}
+	}
+}
+
+impl Default for Click {
+	fn default() -> Self {
+		Self {
+			click_time: None,
+			note_position: Vec2::new(0.0,0.0),
 		}
 	}
 }

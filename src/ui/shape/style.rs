@@ -14,6 +14,14 @@ use egui::Rect;
 use egui::Vec2;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+pub enum Unit {
+	Vc,
+	Em,
+	Px
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Style {
 	pub position: Vec2,
 	pub if_absolute: bool,
@@ -55,8 +63,8 @@ pub struct StyleAnimation {
 	pub start_value: f32,
 	pub end_value: f32,
 	pub animation: Animation,
-	pub start_time: Option<u128>,
-	pub animate_time: u128,
+	pub start_time: Option<u64>,
+	pub animate_time: u64,
 	pub if_animating: bool,
 	pub id: usize
 }
@@ -105,7 +113,7 @@ impl Default for StyleAnimation {
 			end_value: 6.0,
 			animation: Animation::default(),
 			start_time: None,
-			animate_time: 5 * 1e6 as u128,
+			animate_time: 5 * 1e6 as u64,
 			if_animating: false,
 			id: 1
 		}

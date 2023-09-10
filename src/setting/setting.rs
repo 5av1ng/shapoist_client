@@ -24,6 +24,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct Setting {
 	pub ui_theme: String,
 	pub language: String,
@@ -87,10 +88,10 @@ pub enum PossibleSettingChange {
 }
 
 pub fn read_settings() -> Result<Setting, ShapoError> {
-	let setting_read = match read_file(&format!("{}/assets/setting.json", *ASSETS_PATH)){
-		Ok(t) => prase_json(&t)?,
+	let setting_read = match read_file(&format!("{}/assets/setting.toml", *ASSETS_PATH)){
+		Ok(t) => parse_toml(&t)?,
 		Err(_) => {
-			write_file(&format!("{}/assets/setting.json", *ASSETS_PATH), &to_json(&Setting::default())?)?;
+			write_file(&format!("{}/assets/setting.toml", *ASSETS_PATH), &to_toml(&Setting::default())?)?;
 			Setting::default()
 		}
 	};
@@ -130,28 +131,28 @@ impl Setting {
 	pub fn from_change(change_type: &PossibleSettingChange, json: String) -> Result<Setting, ShapoError> {
 		let mut setting = read_settings()?;
 		match change_type {
-			PossibleSettingChange::UiTheme => setting.ui_theme = prase_json(&json)?,
-			PossibleSettingChange::Language => setting.language = prase_json(&json)?,
-			PossibleSettingChange::Accuracy => setting.accuracy = prase_json(&json)?,
-			PossibleSettingChange::IfImmaculate => setting.if_immaculate = prase_json(&json)?,
-			PossibleSettingChange::TapPromptColor => setting.tap_prompt_color = prase_json(&json)?,
-			PossibleSettingChange::SlidePromptColor => setting.slide_prompt_color = prase_json(&json)?,
-			PossibleSettingChange::NotePromptRadius => setting.note_prompt_radius = prase_json(&json)?,
-			PossibleSettingChange::JudgeFieldPromptColor => setting.judge_field_prompt_color = prase_json(&json)?,
-			PossibleSettingChange::JudgeFieldPromptSize => setting.judge_field_prompt_size = prase_json(&json)?,
-			PossibleSettingChange::DropVelocity => setting.drop_velocity = prase_json(&json)?,
-			PossibleSettingChange::ImmaculateColor => setting.immaculate_color = prase_json(&json)?,
-			PossibleSettingChange::ExtraColor => setting.extra_color = prase_json(&json)?,
-			PossibleSettingChange::NormalColor => setting.normal_color = prase_json(&json)?,
-			PossibleSettingChange::FadeColor => setting.fade_color = prase_json(&json)?,
-			PossibleSettingChange::MissColor => setting.miss_color = prase_json(&json)?,
-			PossibleSettingChange::BackgroundColor => setting.background_color = prase_json(&json)?,
-			PossibleSettingChange::SearchDepth => setting.search_depth = prase_json(&json)?,
-			PossibleSettingChange::IfTip => setting.if_tip = prase_json(&json)?,
-			PossibleSettingChange::Volume => setting.volume = prase_json(&json)?,
-			PossibleSettingChange::UndoSteps => setting.undo_steps = prase_json(&json)?,
-			PossibleSettingChange::IfShader => setting.if_shader = prase_json(&json)?,
-			PossibleSettingChange::Offect => setting.offect = prase_json(&json)?,
+			PossibleSettingChange::UiTheme => setting.ui_theme = parse_json(&json)?,
+			PossibleSettingChange::Language => setting.language = parse_json(&json)?,
+			PossibleSettingChange::Accuracy => setting.accuracy = parse_json(&json)?,
+			PossibleSettingChange::IfImmaculate => setting.if_immaculate = parse_json(&json)?,
+			PossibleSettingChange::TapPromptColor => setting.tap_prompt_color = parse_json(&json)?,
+			PossibleSettingChange::SlidePromptColor => setting.slide_prompt_color = parse_json(&json)?,
+			PossibleSettingChange::NotePromptRadius => setting.note_prompt_radius = parse_json(&json)?,
+			PossibleSettingChange::JudgeFieldPromptColor => setting.judge_field_prompt_color = parse_json(&json)?,
+			PossibleSettingChange::JudgeFieldPromptSize => setting.judge_field_prompt_size = parse_json(&json)?,
+			PossibleSettingChange::DropVelocity => setting.drop_velocity = parse_json(&json)?,
+			PossibleSettingChange::ImmaculateColor => setting.immaculate_color = parse_json(&json)?,
+			PossibleSettingChange::ExtraColor => setting.extra_color = parse_json(&json)?,
+			PossibleSettingChange::NormalColor => setting.normal_color = parse_json(&json)?,
+			PossibleSettingChange::FadeColor => setting.fade_color = parse_json(&json)?,
+			PossibleSettingChange::MissColor => setting.miss_color = parse_json(&json)?,
+			PossibleSettingChange::BackgroundColor => setting.background_color = parse_json(&json)?,
+			PossibleSettingChange::SearchDepth => setting.search_depth = parse_json(&json)?,
+			PossibleSettingChange::IfTip => setting.if_tip = parse_json(&json)?,
+			PossibleSettingChange::Volume => setting.volume = parse_json(&json)?,
+			PossibleSettingChange::UndoSteps => setting.undo_steps = parse_json(&json)?,
+			PossibleSettingChange::IfShader => setting.if_shader = parse_json(&json)?,
+			PossibleSettingChange::Offect => setting.offect = parse_json(&json)?,
 		}
 		return Ok(setting);
 	}
@@ -254,8 +255,8 @@ impl Setting {
 			click_logic: Some(Logic::CloseWindow(1002)),
 			hold_logic: None
 		}));
-		let window_read = read_file(&format!("{}/assets/styles/{}/Window/Setting.json",*ASSETS_PATH , self.ui_theme))?;
-		let mut window: Window = prase_json(&window_read)?;
+		let window_read = read_file(&format!("{}/assets/styles/{}/Window/Setting.toml",*ASSETS_PATH , self.ui_theme))?;
+		let mut window: Window = parse_toml(&window_read)?;
 		window.content = content;
 		Ok(window)
 	}

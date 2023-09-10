@@ -15,6 +15,7 @@ use egui::epaint::textures::TextureOptions;
 use egui::Vec2;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Image {
 	pub name: String,
 	pub first_path: Path,

@@ -1,0 +1,140 @@
+if_labeled = false
+draggable = false
+model = false
+id = 1_001
+if_enabled = true
+
+[position]
+x = 15
+y = 15
+
+[size]
+x = 70
+y = 60
+
+[[content]]
+[content.Button]
+	[[content.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[content.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 0 ]
+		anchor = [ "Min", "Min" ]
+		text_size = 12
+
+			[content.Button.shape.style.position]
+			x = 0
+			y = 0
+
+			[content.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[content.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[content.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[content.Button.shape.style.volume.min]
+x = 0
+y = 0
+
+[content.Button.shape.style.volume.max]
+x = 100
+y = 100
+
+[content.Button.shape.shape.Rectangle]
+if_keep = false
+
+	[content.Button.shape.shape.Rectangle.bottom_right_point]
+	x = 10
+	y = 10
+
+	[content.Button.shape.shape.Rectangle.rounding]
+	nw = 0
+	ne = 0
+	sw = 0
+	se = 0
+
+[[content]]
+[[content.Shapo]]
+if_delete = false
+animation = [ ]
+
+	[content.Shapo.style]
+	if_absolute = false
+	rotate = 0
+	fill = [ 255, 255, 255, 255 ]
+	anchor = [ "Min", "Min" ]
+	text_size = 12
+
+		[content.Shapo.style.position]
+		x = 0
+		y = 0
+
+		[content.Shapo.style.size]
+		x = 1
+		y = 1
+
+		[content.Shapo.style.rotate_center]
+		x = 0
+		y = 0
+
+		[content.Shapo.style.stroke]
+		width = 0
+		color = [ 0, 0, 0, 0 ]
+
+[content.Shapo.style.volume.min]
+x = 0
+y = 0
+
+[content.Shapo.style.volume.max]
+x = 100
+y = 100
+
+[content.Shapo.shape.Text.text]
+Code = 3
+
+[[content.Shapo]]
+if_delete = false
+animation = [ ]
+
+	[content.Shapo.style]
+	if_absolute = false
+	rotate = 0
+	fill = [ 255, 255, 255, 255 ]
+	anchor = [ "Min", "Min" ]
+	text_size = 12
+
+		[content.Shapo.style.position]
+		x = 0
+		y = 5
+
+		[content.Shapo.style.size]
+		x = 1
+		y = 1
+
+		[content.Shapo.style.rotate_center]
+		x = 0
+		y = 0
+
+		[content.Shapo.style.stroke]
+		width = 0
+		color = [ 0, 0, 0, 0 ]
+
+[content.Shapo.style.volume.min]
+x = 0
+y = 0
+
+[content.Shapo.style.volume.max]
+x = 100
+y = 100
+
+[content.Shapo.shape.Text.text]
+Code = 0

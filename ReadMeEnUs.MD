@@ -40,7 +40,7 @@ Shapoist has two scoring methods and five level of judgement.
 
 ### Platform
 
-Windows MacOS Linux （[For Android click here](https://github.com/5av1ng/adgk-shapoist)) were supported, theoretically. If you are MacOS or Linux User, you need compile by yourself.
+Windows MacOS Linux Android were supported, theoretically. If you are MacOS or Linux User, you need compile by yourself.
 
 ## Developing
 

@@ -5,6 +5,7 @@ use egui::Vec2;
 use crate::ui::shapo::ShapeRender;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Circle {
 	pub radius: f32,
 }

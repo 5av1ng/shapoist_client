@@ -8,6 +8,7 @@ use egui::FontFamily;
 use crate::language::language::Language;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Text {
 	pub text: Language
 }

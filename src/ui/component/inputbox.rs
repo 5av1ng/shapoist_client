@@ -12,11 +12,23 @@ use crate::ui::ui::ChangeType;
 use crate::ui::shapo::Shapo;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct InputBox {
 	pub shape: Vec<Shapo>,
 	pub text: String,
 	pub hover_text: Language,
 	pub change_type: ChangeType
+}
+
+impl Default for InputBox {
+	fn default() -> Self {
+		Self {
+			shape: vec!(),
+			text: String::new(),
+			hover_text: Language::Text(String::from("TEST")),
+			change_type: ChangeType::ProjectPath
+		}
+	}
 }
 
 impl Content for InputBox {

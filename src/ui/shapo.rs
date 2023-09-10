@@ -20,12 +20,13 @@ use crate::play::timer::Timer;
 use crate::ShapoError;
 
 #[derive(serde::Deserialize, serde::Serialize, Default, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Shapo {
 	pub style: Style,
 	pub shape: Shape,
 	pub animation: Vec<StyleAnimation>,
 	pub label: Option<Vec<String>>,
-	pub sustain_time: Option<(u128,u128)>,
+	pub sustain_time: Option<(u64,u64)>,
 	pub if_delete: bool
 }
 
@@ -117,7 +118,7 @@ impl Shapo {
 		for a in &mut self.animation {
 			if a.if_animating {
 				let time_read = timer.read()?;
-				let delay:u128;
+				let delay:u64;
 				if let Some(t) = a.start_time {
 					delay = t;
 				}else {

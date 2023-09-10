@@ -12,11 +12,23 @@ use crate::ui::ui::ChangeType;
 use crate::ui::shapo::Shapo;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct CheckBox {
 	pub shape: Vec<Shapo>,
 	pub if_checked: bool,
 	pub hover_text: Language,
 	pub change_type: ChangeType
+}
+
+impl Default for CheckBox {
+	fn default() -> Self { 
+		Self {
+			shape: vec!(),
+			if_checked: false,
+			hover_text: Language::Text(String::from("TEST")),
+			change_type: ChangeType::ProjectPath
+		}
+	}
 }
 
 impl Content for CheckBox {

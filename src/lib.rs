@@ -26,55 +26,58 @@ pub static ASSETS_PATH: Lazy<String> = Lazy::new(|| String::from("data/data/com.
 pub static ASSETS_PATH: Lazy<String> = Lazy::new(|| String::from("."));
 
 fn entry(mut options: NativeOptions){
-    let args: Vec<String> = env::args().collect();
-    let _ = check();
-    create_file(&LOGPATH).unwrap();
-    options.renderer = eframe::Renderer::Wgpu;
-    run_native("shapoist",options, Box::new(|cc| Box::new(crate::ui::page::Page::new(cc, args).unwrap()))).unwrap();
+	let args: Vec<String> = env::args().collect();
+	let _ = check();
+	create_file(&LOGPATH).unwrap();
+	options.renderer = eframe::Renderer::Wgpu;
+	run_native("shapoist",options, Box::new(|cc| Box::new(crate::ui::page::Page::new(cc, args).unwrap()))).unwrap();
 }
 
 #[cfg(target_os = "android")]
 #[no_mangle]
 fn android_main(app: AndroidApp) {
-    use winit::platform::android::EventLoopBuilderExtAndroid;
+	use winit::platform::android::EventLoopBuilderExtAndroid;
 
-    android_logger::init_once(
-        android_logger::Config::default().with_max_level(log::LevelFilter::Debug),
-    );
+	android_logger::init_once(
+		android_logger::Config::default().with_max_level(log::LevelFilter::Debug),
+	);
 
-    let options = NativeOptions {
-        event_loop_builder: Some(Box::new(move |builder| {
-            builder.with_android_app(app);
-        })),
-        ..Default::default()
-    };
+	let options = NativeOptions {
+		event_loop_builder: Some(Box::new(move |builder| {
+			builder.with_android_app(app);
+		})),
+		..Default::default()
+	};
 
-    entry(options)
+	entry(options)
 }
 
 #[cfg(not(target_os = "android"))]
 fn main() {
-    env_logger::builder()
-        .filter(Some("adgk-shapoist::log_out::log_export"), log::LevelFilter::Info)
-        .parse_default_env()
-        .init();
-    let icon = match load_icon(&format!("{}/assets/icon/icon.png", *ASSETS_PATH)) {
-        Ok(t) => Some(t),
-        Err(_) => None
-    };
-    let native_options = NativeOptions{
-        resizable: true,
-        initial_window_size: Some(egui::Vec2 { x: 800.0, y: 600.0 }),
-        min_window_size: Some(egui::Vec2 { x: 800.0, y: 600.0 }),
-        icon_data: icon,
-        drag_and_drop_support: true,
-        ..Default::default()
-    };
-    entry(native_options);
+	env_logger::builder()
+		.parse_default_env()
+		.filter(Some("wgpu_core::device"), log::LevelFilter::Off)
+		.filter(Some("wgpu_hal::vulkan::instance"), log::LevelFilter::Off)
+		.filter(Some("wgpu_hal::auxil::dxgi::exception"), log::LevelFilter::Off)
+		.filter(Some("wgpu_hal::vulkan"), log::LevelFilter::Off)
+		.init();
+	let icon = match load_icon(&format!("{}/assets/icon/icon.png", *ASSETS_PATH)) {
+		Ok(t) => Some(t),
+		Err(_) => None
+	};
+	let native_options = NativeOptions{
+		resizable: true,
+		initial_window_size: Some(egui::Vec2 { x: 800.0, y: 600.0 }),
+		min_window_size: Some(egui::Vec2 { x: 800.0, y: 600.0 }),
+		icon_data: icon,
+		drag_and_drop_support: true,
+		..Default::default()
+	};
+	entry(native_options);
 }
 
 fn log_name_generate() -> String {
-    let fmt = "%Y-%m-%d %H%M%S";
-    let now = Local::now().format(fmt).to_string();
-    format!("{}/assets/log/[{}]running.log", *ASSETS_PATH, now)
+	let fmt = "%Y-%m-%d %H%M%S";
+	let now = Local::now().format(fmt).to_string();
+	format!("{}/assets/log/[{}]running.log", *ASSETS_PATH, now)
 }

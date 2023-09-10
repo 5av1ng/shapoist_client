@@ -1,16 +1,16 @@
+use crate::system::system_function::to_json;
+use crate::system::system_function::parse_json_form_path;
 use crate::ASSETS_PATH;
 use kira::clock::ClockSpeed;
 use kira::clock::ClockHandle;
 use std::collections::BTreeMap;
-use crate::system::system_function::prase_json_form_path;
 use crate::system::system_function::remove_path;
 use crate::system::system_function::copy_file;
-use crate::system::system_function::to_json;
 use crate::system::system_function::create_dir;
 use crate::play::note::Project;
 use crate::play::note::PossibleChartChange;
 use crate::setting::setting::read_settings;
-use crate::system::system_function::prase_json;
+use crate::system::system_function::parse_json;
 use crate::play::note::Chart;
 use egui::DroppedFile;
 use crate::create_file;
@@ -71,6 +71,7 @@ enum Condition{
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)]
 struct Status {
 	if_inspection: bool,
 	if_ui_test_window: bool
@@ -176,7 +177,7 @@ impl Page {
 				self.router = Router::PlayPage(String::from("TEST"));
 				self.display.component = Some(vec!());
 				self.display.window = vec!();
-				self.display.play_top = Some(PlayTop::default().unwrap());
+				self.display.play_top = Some(PlayTop::default());
 				self.stop_sound().unwrap();
 			}else if input.consume_shortcut(&egui::KeyboardShortcut::new(consume, Key::T)) {
 				self.display.if_normal = true;
@@ -328,12 +329,12 @@ impl Page {
 			Back::Play => {
 				if let Some(t) = &mut self.display.play_top {
 					t.play()?;
-					if !(t.current_time.checked_sub(3 * 1e6 as u128)).is_some() {
+					if !(t.current_time.checked_sub(3 * 1e6 as u64)).is_some() {
 						t.chart.if_playing = false;
 					}
 				}
 				if let Some(t) = &self.display.play_top {
-					if (t.current_time.checked_sub(3 * 1e6 as u128)).is_some() {
+					if (t.current_time.checked_sub(3 * 1e6 as u64)).is_some() {
 						self.play_music(format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH , t.chart.mapname), t.chart.bpm, 0.0, (t.chart.offect as f32 - t.current_time as f32 + 3.0 * 1e6) as f32 / 1e6)?;
 					}
 				}
@@ -359,9 +360,9 @@ impl Page {
 			Back::Change(type_to_change,json) => {
 				match type_to_change {
 					ChangeType::Setting(_) => {
-						remove_file(&format!("{}/assets/setting.json", *ASSETS_PATH))?;
-						create_file(&format!("{}/assets/setting.json", *ASSETS_PATH))?;
-						write_file(&format!("{}/assets/setting.json", *ASSETS_PATH),json)?;
+						remove_file(&format!("{}/assets/setting.toml", *ASSETS_PATH))?;
+						create_file(&format!("{}/assets/setting.toml", *ASSETS_PATH))?;
+						write_file(&format!("{}/assets/setting.toml", *ASSETS_PATH),json)?;
 					},
 					ChangeType::ChartTemp(t) => {
 						let setting = read_settings()?;
@@ -390,19 +391,19 @@ impl Page {
 								self.temp.chart_undo.push((t.clone(),self.temp.chart.clone()));
 							}
 						}
-						self.temp.chart = prase_json(&json)?;
+						self.temp.chart = parse_json(&json)?;
 						self.temp.chart.length_normallize();
 						self.temp.undo_times = 0;
 						self.temp.project.chart = self.temp.chart.clone();
 					},
 					ChangeType::MuiscPath => {
-						self.temp.music_path = prase_json(&json)?;
+						self.temp.music_path = parse_json(&json)?;
 					},
 					ChangeType::ImagePath => {
-						self.temp.image_path = prase_json(&json)?;
+						self.temp.image_path = parse_json(&json)?;
 					},
 					ChangeType::ProjectPath => {
-						self.temp.now_project_path = prase_json(&json)?;
+						self.temp.now_project_path = parse_json(&json)?;
 					},
 				}
 			},
@@ -454,8 +455,8 @@ impl Page {
 					actual_project_path = actual_project_path + "/" + a
 				}
 				actual_project_path = actual_project_path[2..actual_project_path.len()-1].to_string();
-				self.temp.chart = prase_json_form_path(&format!("{}/map.shapoistmap", actual_project_path))?;
-				self.temp.project = match prase_json_form_path(&format!("{}/map.shapoistproject", actual_project_path)) {
+				self.temp.chart = parse_json_form_path(&format!("{}/map.shapoistmap", actual_project_path))?;
+				self.temp.project = match parse_json_form_path(&format!("{}/map.shapoistproject", actual_project_path)) {
 					Ok(t) => t,
 					Err(_) => Project::from_chart(self.temp.chart.clone()),
 				};

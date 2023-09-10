@@ -1,4 +1,4 @@
-// use crate::system::shapo_language::Rule;
+// use crate::system::ui_file::Rule;
 use crate::play::timer::TimerError;
 
 #[derive(Debug)]
@@ -6,12 +6,11 @@ pub enum ShapoError {
 	SystemError(String),
 	ConvertError(String),
 	TimerError(TimerError),
-	// PraseError(PraseError),
+	// ParseError(ParseError),
 }
 
 // #[derive(Debug, Clone)]
-// pub enum PraseError {
-// 	PraseError(pest::error::Error<Rule>),
-// 	InvalidOutPut,
+// pub enum ParseError {
+// 	ParseError(pest::error::Error<Rule>),
 // 	NoInput
 // }

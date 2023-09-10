@@ -1,0 +1,15 @@
+label = [ "EditNew" ]
+if_labeled = false
+draggable = false
+model = false
+id = 1_001
+content = [ ]
+if_enabled = true
+
+[position]
+x = 15
+y = 15
+
+[size]
+x = 70
+y = 60

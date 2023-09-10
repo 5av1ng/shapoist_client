@@ -1,0 +1,587 @@
+timer = [ ]
+if_normal = true
+
+[[component]]
+[component.Shader]
+size = [ 300, 300 ]
+name = "default_shader"
+repeat_x = 2
+repeat_y = 1
+
+	[component.Shader.position]
+	x = 0
+	y = 0
+
+	[component.Shader.zoom]
+	x = 1
+	y = 1
+
+	[component.Shader.code]
+	Built = "MeshWithLight"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 0 ]
+		anchor = [ "Min", "Min" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 0
+y = 0
+
+[component.Button.shape.style.volume.max]
+x = 100
+y = 100
+
+[component.Button.shape.shape.Rectangle]
+if_keep = false
+
+	[component.Button.shape.shape.Rectangle.bottom_right_point]
+	x = 10
+	y = 10
+
+	[component.Button.shape.shape.Rectangle.rounding]
+	nw = 0
+	ne = 0
+	sw = 0
+	se = 0
+
+[[component]]
+[[component.Shapo]]
+animation = [ ]
+if_delete = false
+
+	[component.Shapo.style]
+	if_absolute = false
+	rotate = 0
+	fill = [ 0, 0, 0, 130 ]
+	anchor = [ "Min", "Min" ]
+	text_size = 12
+
+		[component.Shapo.style.position]
+		x = 0
+		y = 0
+
+		[component.Shapo.style.size]
+		x = 1
+		y = 1
+
+		[component.Shapo.style.rotate_center]
+		x = 0
+		y = 0
+
+		[component.Shapo.style.stroke]
+		width = 0
+		color = [ 0, 0, 0, 0 ]
+
+[component.Shapo.style.volume.min]
+x = 0
+y = 0
+
+[component.Shapo.style.volume.max]
+x = 10
+y = 10
+
+[component.Shapo.shape.Rectangle]
+if_keep = false
+
+	[component.Shapo.shape.Rectangle.bottom_right_point]
+	x = 100
+	y = 100
+
+	[component.Shapo.shape.Rectangle.rounding]
+	nw = 0
+	ne = 0
+	sw = 0
+	se = 0
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Min", "Min" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 3
+			y = 3
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 3
+y = 3
+
+[component.Button.shape.style.volume.max]
+x = 6
+y = 6
+
+[component.Button.shape.shape.Image]
+name = "Setting"
+first_path = "Styles"
+path = "Icons/Setting.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/Setting.toml"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 50
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 48.5
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 51.5
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "User"
+first_path = "Styles"
+path = "Icons/User.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/User.toml"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 42.5
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 41
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 44
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "Shop"
+first_path = "Styles"
+path = "Icons/Shop.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/Shop.toml"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 57.5
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 56
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 59
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "Multiplayer"
+first_path = "Styles"
+path = "Icons/Multiplayer.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/Multiplayer.toml"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 35
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 33.5
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 36.5
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "Edit"
+first_path = "Styles"
+path = "Icons/Edit.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/Edit.toml"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 27.5
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 26
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 29
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "Charts"
+first_path = "Styles"
+path = "Icons/Charts.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromLabel = [ "Chart Page 1", "Chart" ]
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 65
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 63.5
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 66.5
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "Chat"
+first_path = "Styles"
+path = "Icons/Chat.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/Chat.toml"
+
+[[component]]
+[component.Button]
+	[[component.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[component.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 255 ]
+		anchor = [ "Center", "Center" ]
+		text_size = 12
+
+			[component.Button.shape.style.position]
+			x = 72.5
+			y = 87
+
+			[component.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[component.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[component.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[component.Button.shape.style.volume.min]
+x = 71
+y = 85.5
+
+[component.Button.shape.style.volume.max]
+x = 74
+y = 88.5
+
+[component.Button.shape.shape.Image]
+name = "Shutdown"
+first_path = "Styles"
+path = "Icons/Shutdown.png"
+if_keep = true
+
+	[component.Button.shape.shape.Image.bottom_right_point]
+	x = 3
+	y = 3
+
+[component.Button.click_logic.OpenWindow]
+FromPath = "Window/Shutdown.toml"
+
+[[window]]
+draggable = false
+model = false
+id = 1_001
+if_enabled = true
+if_labeled = false
+label = [ "Chart Page 1" ]
+
+	[window.position]
+	x = 15
+	y = 15
+
+	[window.size]
+	x = 70
+	y = 60
+
+	[[window.content]]
+[window.content.Button]
+if_delete = false
+
+	[[window.content.Button.shape]]
+	if_delete = false
+	animation = [ ]
+
+		[window.content.Button.shape.style]
+		if_absolute = false
+		rotate = 0
+		fill = [ 0, 0, 0, 0 ]
+		anchor = [ "Min", "Min" ]
+		text_size = 12
+
+			[window.content.Button.shape.style.position]
+			x = 0
+			y = 0
+
+			[window.content.Button.shape.style.size]
+			x = 1
+			y = 1
+
+			[window.content.Button.shape.style.rotate_center]
+			x = 0
+			y = 0
+
+			[window.content.Button.shape.style.stroke]
+			width = 0
+			color = [ 0, 0, 0, 0 ]
+
+[window.content.Button.shape.style.volume.min]
+x = 0
+y = 0
+
+[window.content.Button.shape.style.volume.max]
+x = 100
+y = 100
+
+[window.content.Button.shape.shape.Rectangle]
+if_keep = false
+
+	[window.content.Button.shape.shape.Rectangle.bottom_right_point]
+	x = 10
+	y = 10
+
+	[window.content.Button.shape.shape.Rectangle.rounding]
+	nw = 0
+	ne = 0
+	sw = 0
+	se = 0

@@ -3,6 +3,7 @@ use crate::setting::setting::*;
 use egui::Vec2;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Animation {
 	pub control_point_one: Vec2,
 	pub control_point_two: Vec2
@@ -61,4 +62,30 @@ impl Animation {
 		}
 		return Ok(y);
 	}
+
+	// pub fn compress(&mut self) {
+	// 	if self.control_point_one.x > 1.0 {
+	// 		self.control_point_one.x = 1.0
+	// 	}else if self.control_point_one.x < 0.0 {
+	// 		self.control_point_one.x = 0.0
+	// 	}
+
+	// 	if self.control_point_one.y > 1.0 {
+	// 		self.control_point_one.y = 1.0
+	// 	}else if self.control_point_one.y < 0.0 {
+	// 		self.control_point_one.y = 0.0
+	// 	}
+
+	// 	if self.control_point_two.x > 1.0 {
+	// 		self.control_point_two.x = 1.0
+	// 	}else if self.control_point_two.x < 0.0 {
+	// 		self.control_point_two.x = 0.0
+	// 	}
+
+	// 	if self.control_point_two.y > 1.0 {
+	// 		self.control_point_two.y = 1.0
+	// 	}else if self.control_point_two.y < 0.0 {
+	// 		self.control_point_two.y = 0.0
+	// 	}
+	// }
 }

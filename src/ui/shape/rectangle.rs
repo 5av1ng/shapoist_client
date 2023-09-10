@@ -11,6 +11,7 @@ use egui::Rounding;
 use egui::Vec2;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(default)]
 pub struct Rectangle {
 	pub bottom_right_point: Vec2,
 	pub rounding: Rounding,

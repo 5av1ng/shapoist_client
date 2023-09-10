@@ -1,0 +1,273 @@
+[[Shapo]]
+sustain_time = [
+    0,
+    99999999999999,
+]
+if_delete = false
+
+[Shapo.style]
+if_absolute = false
+rotate = 0.0
+fill = [
+    0,
+    0,
+    0,
+    255,
+]
+anchor = [
+    "Center",
+    "Center",
+]
+text_size = 12.0
+
+[Shapo.style.position]
+x = 0.0
+y = 0.0
+
+[Shapo.style.size]
+x = 1.0
+y = 1.0
+
+[Shapo.style.rotate_center]
+x = 0.0
+y = 0.0
+
+[Shapo.style.stroke]
+width = 2.0
+color = [
+    255,
+    255,
+    255,
+    255,
+]
+
+[Shapo.style.volume.min]
+x = 0.0
+y = 0.0
+
+[Shapo.style.volume.max]
+x = 0.0
+y = 0.0
+
+[Shapo.shape.Rectangle]
+if_keep = false
+
+[Shapo.shape.Rectangle.bottom_right_point]
+x = 10.0
+y = 1.5
+
+[Shapo.shape.Rectangle.rounding]
+nw = 7.0
+ne = 7.0
+sw = 7.0
+se = 7.0
+
+[[Shapo.animation]]
+start_value = 0.0
+end_value = 20.0
+animate_time = 100000
+if_animating = true
+id = 1
+
+[Shapo.animation.style.Position]
+if_close = false
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 0.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 5.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 5.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 10.0
+
+[Shapo.animation.animation.control_point_one]
+x = 0.0
+y = 0.0
+
+[Shapo.animation.animation.control_point_two]
+x = 1.0
+y = 1.0
+
+[[Shapo]]
+sustain_time = [
+    0,
+    99999999999999,
+]
+if_delete = false
+
+[Shapo.style]
+if_absolute = false
+rotate = 0.0
+fill = [
+    0,
+    0,
+    0,
+    255,
+]
+anchor = [
+    "Center",
+    "Center",
+]
+text_size = 12.0
+
+[Shapo.style.position]
+x = -5.5
+y = 0.0
+
+[Shapo.style.size]
+x = 1.0
+y = 1.0
+
+[Shapo.style.rotate_center]
+x = 0.0
+y = 0.0
+
+[Shapo.style.stroke]
+width = 2.0
+color = [
+    255,
+    255,
+    255,
+    255,
+]
+
+[Shapo.style.volume.min]
+x = 0.0
+y = 0.0
+
+[Shapo.style.volume.max]
+x = 0.0
+y = 0.0
+
+[Shapo.shape.Circle]
+radius = 0.5
+
+[[Shapo.animation]]
+start_value = 0.0
+end_value = 20.0
+animate_time = 100000
+if_animating = true
+id = 1
+
+[Shapo.animation.style.Position]
+if_close = false
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 0.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 5.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 5.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 10.0
+
+[Shapo.animation.animation.control_point_one]
+x = 0.0
+y = 0.0
+
+[Shapo.animation.animation.control_point_two]
+x = 1.0
+y = 1.0
+
+[[Shapo]]
+sustain_time = [
+    0,
+    99999999999999,
+]
+if_delete = false
+
+[Shapo.style]
+if_absolute = false
+rotate = 0.0
+fill = [
+    0,
+    0,
+    0,
+    255,
+]
+anchor = [
+    "Center",
+    "Center",
+]
+text_size = 12.0
+
+[Shapo.style.position]
+x = 5.5
+y = 0.0
+
+[Shapo.style.size]
+x = 1.0
+y = 1.0
+
+[Shapo.style.rotate_center]
+x = 0.0
+y = 0.0
+
+[Shapo.style.stroke]
+width = 2.0
+color = [
+    255,
+    255,
+    255,
+    255,
+]
+
+[Shapo.style.volume.min]
+x = 0.0
+y = 0.0
+
+[Shapo.style.volume.max]
+x = 0.0
+y = 0.0
+
+[Shapo.shape.Circle]
+radius = 0.5
+
+[[Shapo.animation]]
+start_value = 0.0
+end_value = 20.0
+animate_time = 100000
+if_animating = true
+id = 1
+
+[Shapo.animation.style.Position]
+if_close = false
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 0.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 5.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 5.0
+
+[[Shapo.animation.style.Position.points]]
+x = 0.0
+y = 10.0
+
+[Shapo.animation.animation.control_point_one]
+x = 0.0
+y = 0.0
+
+[Shapo.animation.animation.control_point_two]
+x = 1.0
+y = 1.0

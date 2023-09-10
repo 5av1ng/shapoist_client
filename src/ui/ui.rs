@@ -1,3 +1,4 @@
+use crate::system::system_function::parse_json;
 use crate::ASSETS_PATH;
 use crate::ui::end_page::end_page;
 use crate::ui::edit_page::edit_page;
@@ -7,7 +8,7 @@ use crate::system::system_function::to_json;
 use crate::setting::setting::Setting;
 use egui::DroppedFile;
 use crate::ui::component::color_picker::ColorPicker;
-use crate::system::system_function::prase_json;
+use crate::system::system_function::parse_toml;
 use crate::ui::component::check_box::CheckBox;
 use crate::ui::component::combo_box::ComboBox;
 use crate::setting::setting::PossibleSettingChange;
@@ -46,6 +47,7 @@ pub enum Component {
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
+#[serde(default)]
 pub struct Display {
 	pub component: Option<Vec<Component>>,
 	pub play_top: Option<PlayTop>,
@@ -148,9 +150,9 @@ impl Display {
 		 	*self = end_page(playtop.clone())?;
 		 	return Ok(Back::PauseSound);
 		};
-		let path = format!("{}/assets/styles/{}/{}.json",*ASSETS_PATH,&setting.ui_theme, &router.to_string());
+		let path = format!("{}/assets/styles/{}/{}.toml",*ASSETS_PATH,&setting.ui_theme, &router.to_string());
 		let read =  read_file(&path)?;
-		let mut display_read:Self = prase_json(&read)?;
+		let mut display_read:Self = parse_toml(&read)?;
 		if !display_read.label.is_none() {
 			for a in display_read.label.clone().unwrap() {
 				if a == "test".to_string() {
@@ -349,7 +351,7 @@ impl ChangeType {
 				}else {
 					value_json = to_json(&value_to_change)?;
 				}
-				let path: String = prase_json(&value_json)?;
+				let path: String = parse_json(&value_json)?;
 				let split:Vec<&str> = path.split(".").collect();
 				if split.len() <= 1 {
 					return Err(ShapoError::SystemError(format!("not a file")))
@@ -366,7 +368,7 @@ impl ChangeType {
 				}else {
 					value_json = to_json(&value_to_change)?;
 				}
-				let path: String = prase_json(&value_json)?;
+				let path: String = parse_json(&value_json)?;
 				let split:Vec<&str> = path.split(".").collect();
 				if split.len() <= 1 {
 					return Err(ShapoError::SystemError(format!("not a file")))

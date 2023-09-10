@@ -17,6 +17,7 @@ use std::thread;
 use std::sync::mpsc;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct Shader {
 	pub position:Vec2,
 	pub size: [usize; 2],
@@ -40,13 +41,29 @@ pub enum Built {
 	MeshWithLight,
 }
 
+impl Default for Shader {
+	fn default() -> Self {
+		Self {
+			position: Vec2::new(0.0,0.0),
+			size: [100; 2],
+			zoom: Vec2::new(100.0,100.0),
+			code: ShaderCode::Built(Built::MeshWithLight),
+			timer: None,
+			name: String::from("default"),
+			repeat_x: 1,
+			repeat_y: 1,
+			registered_info: None
+		}
+	}
+}
+
 impl Shader {
 	pub fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, _: &mut Vec<Timer>, _: Option<Vec2>, if_enabled: bool, ctx: &egui::Context) -> Result<Vec<Back>,ShapoError> {
 		let setting = read_settings()?;
 		if !setting.if_shader {
 			return Ok(vec!())
 		}
-		let time:u128;
+		let time:u64;
 		if let Some(t) = self.timer {
 			time = t.read()?;
 		}else {
@@ -97,7 +114,7 @@ impl Shader {
 }
 
 impl Built {
-	fn render(&self, size: &[usize;2], time: u128) -> Result<Vec<Color32>,ShapoError> {
+	fn render(&self, size: &[usize;2], time: u64) -> Result<Vec<Color32>,ShapoError> {
 		let mut out_vec = vec!();
 		let mut thread_handler = vec!();
 		let setting = read_settings()?;
@@ -190,7 +207,7 @@ impl Built {
 // 	output
 // }
 
-fn mesh_with_light(x: usize,y:usize,size: &[usize;2], time: u128, background_color: Color32) -> Color32 {
+fn mesh_with_light(x: usize,y:usize,size: &[usize;2], time: u64, background_color: Color32) -> Color32 {
 	let mut u = (x as f32 - size[1] as f32 / 2.0) / size[1] as f32;
 	let mut v = (y as f32 - size[0] as f32 / 2.0) / size[0] as f32;
 	u = u.abs();

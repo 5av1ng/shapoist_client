@@ -279,18 +279,49 @@ pub fn load_image(path: &str) -> Result<ColorImage,ShapoError> {
 	))
 }
 
+pub fn to_toml<T: serde::Serialize>(input: &T) -> Result<String, ShapoError> {
+	match toml::to_string_pretty(input) {
+		Ok(t) => return Ok(t),
+		Err(e) => {
+			// print_log(&format!("[ERROR] error while converting to toml. info: {}", e.to_string()));
+			return Err(ShapoError::ConvertError(format!("[ERROR] error while converting to toml. info: {}", e.to_string())))
+		}
+	};
+}
+
 pub fn to_json<T: serde::Serialize>(input: &T) -> Result<String, ShapoError> {
 	match serde_json::to_string_pretty(input) {
 		Ok(t) => return Ok(t),
 		Err(e) => {
-			// print_log(&format!("[ERROR] error while converting to json. info: {}", e.to_string()));
+			// print_log(&format!("[ERROR] error while converting to toml. info: {}", e.to_string()));
 			return Err(ShapoError::ConvertError(format!("[ERROR] error while converting to json. info: {}", e.to_string())))
 		}
 	};
 }
 
-pub fn prase_json<'a, T: serde::Deserialize<'a>>(input: &'a String) -> Result<T, ShapoError> {
+pub fn parse_json<T: for<'a> serde::Deserialize<'a>>(input: &String) -> Result<T, ShapoError> {
 	match serde_json::from_str(input) {
+		Ok(t) => return Ok(t),
+		Err(e) => {
+			// print_log(&format!("[ERROR] error while converting to variable. info: {}", e.to_string()));
+			return Err(ShapoError::ConvertError(format!("[ERROR] error while converting to variable(json). info: {}", e.to_string())))
+		}
+	};
+}
+
+pub fn parse_json_form_path<T: for<'a> serde::Deserialize<'a>>(path: & str) -> Result<T, ShapoError> {
+	let input = read_file(path)?;
+	match serde_json::from_str(&input) {
+		Ok(t) => return Ok(t),
+		Err(e) => {
+			// print_log(&format!("[ERROR] error while converting to variable. info: {}", e.to_string()));
+			return Err(ShapoError::ConvertError(format!("[ERROR] error while converting to variable from path. info: {}", e.to_string())))
+		}
+	};
+}
+
+pub fn parse_toml<T: for<'a> serde::Deserialize<'a>>(input: &String) -> Result<T, ShapoError> {
+	match toml::from_str(input) {
 		Ok(t) => return Ok(t),
 		Err(e) => {
 			// print_log(&format!("[ERROR] error while converting to variable. info: {}", e.to_string()));
@@ -299,13 +330,13 @@ pub fn prase_json<'a, T: serde::Deserialize<'a>>(input: &'a String) -> Result<T,
 	};
 }
 
-pub fn prase_json_form_path<T: for<'a> serde::Deserialize<'a>>(path: & str) -> Result<T, ShapoError> {
+pub fn parse_toml_form_path<T: for<'a> serde::Deserialize<'a>>(path: & str) -> Result<T, ShapoError> {
 	let input = read_file(path)?;
-	match serde_json::from_str(&input) {
+	match toml::from_str(&input) {
 		Ok(t) => return Ok(t),
 		Err(e) => {
 			// print_log(&format!("[ERROR] error while converting to variable. info: {}", e.to_string()));
-			return Err(ShapoError::ConvertError(format!("[ERROR] error while converting to variable. info: {}", e.to_string())))
+			return Err(ShapoError::ConvertError(format!("[ERROR] error while converting to variable from path. info: {}", e.to_string())))
 		}
 	};
 }

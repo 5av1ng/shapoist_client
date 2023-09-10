@@ -1,14 +1,15 @@
+use crate::system::system_function::parse_json_form_path;
 use crate::ASSETS_PATH;
 use crate::play::note::Chart;
 use crate::ui::shape::image::*;
 use crate::ui::shape::rectangle::Rectangle;
 use crate::ui::component::combo_box::ComboBox;
-use crate::system::system_function::prase_json_form_path;
+use crate::system::system_function::parse_toml_form_path;
 use crate::ui::component::inputbox::InputBox;
 use crate::ui::page::Temp;
 use egui::DroppedFile;
 use crate::system::system_function::to_json;
-use crate::system::system_function::prase_json;
+use crate::system::system_function::parse_toml;
 use crate::ui::shape::style::Style;
 use crate::ui::shape::text::Text;
 use crate::ui::shapo::Shape;
@@ -32,6 +33,7 @@ use crate::ui::ui::*;
 use crate::play::play_top::PlayInfo;
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
 pub struct Window {
 	pub position: Vec2,
 	pub size: Vec2,
@@ -56,9 +58,9 @@ impl Default for Window {
 		Self {
 			position: Vec2 { x: 0.0, y: 0.0},
 			size: Vec2{ x: 10.0, y: 10.0 },
-			resizeable: Some(Vec2 {x: 10.0, y: 10.0}),
+			resizeable: None,
 			draggable: true,
-			title: Some(Language::Code(0)),
+			title: None,
 			model: false,
 			id: 1000,
 			content,
@@ -214,7 +216,7 @@ impl Window {
 
 	pub fn from_path(path: String) -> Result<Self, ShapoError> {
 		let file_read = read_file(&path)?;
-		let window_read: Window = prase_json(&file_read)?;
+		let window_read: Window = parse_toml(&file_read)?;
 		Ok(window_read)
 	}
 
@@ -243,7 +245,7 @@ impl Window {
 			image_path_json.push(to_json(&a.clone())?);
 		}
 		let setting = read_settings()?;
-		let mut window:Window = prase_json_form_path(&format!("{}/assets/styles/{}/Window/Window.json", *ASSETS_PATH, setting.ui_theme))?;
+		let mut window:Window = parse_toml_form_path(&format!("{}/assets/styles/{}/Window/Window.toml", *ASSETS_PATH, setting.ui_theme))?;
 		let content = vec!(
 			Component::InputBox(InputBox{
 				shape: vec!(),
@@ -355,7 +357,7 @@ impl Window {
 					},
 					..Default::default()
 				}),
-				click_logic: Some(Logic::OpenWindow(WindowToOpen::FromPath("Window/Edit.json".to_string()))),
+				click_logic: Some(Logic::OpenWindow(WindowToOpen::FromPath("Window/Edit.toml".to_string()))),
 				..Default::default()
 			}),
 		);
@@ -376,7 +378,7 @@ impl Window {
 			choice_json.push(to_json(&a)?);
 		}
 		let setting = read_settings()?;
-		let mut window:Window = prase_json_form_path(&format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?;
+		let mut window:Window = parse_toml_form_path(&format!("{}/assets/styles/{}/Window/Window.toml",*ASSETS_PATH , setting.ui_theme))?;
 		let content = vec!(
 			Component::ComboBox(ComboBox{
 				shape: vec!(),
@@ -444,7 +446,7 @@ impl Window {
 					},
 					..Default::default()
 				}),
-				click_logic: Some(Logic::OpenWindow(WindowToOpen::FromPath("Window/EditNew.json".to_string()))),
+				click_logic: Some(Logic::OpenWindow(WindowToOpen::FromPath("Window/EditNew.toml".to_string()))),
 				..Default::default()
 			}),
 		);
@@ -478,11 +480,11 @@ impl Window {
 			return Err(ShapoError::SystemError(format!("invailed page number")))
 		}else {
 			let setting = read_settings()?;
-			let file_read = read_file(&format!("{}/assets/styles/{}/Component/ChartCard.json", *ASSETS_PATH, setting.ui_theme))?;
+			let file_read = read_file(&format!("{}/assets/styles/{}/Component/ChartCard.toml", *ASSETS_PATH, setting.ui_theme))?;
 			let mut button = Button::default();
 			button.shape[0].style.volume = Rect { min: Pos2 { x: 0.0, y: 0.0 }, max: Pos2 { x: 100.0, y: 100.0} };
 			button.shape[0].style.fill = Color32::from_rgba_premultiplied(0,0,0,0);
-			let card_read: Button = prase_json(&file_read)?;
+			let card_read: Button = parse_toml(&file_read)?;
 			let mut component_vec = vec!(Component::Button(button));
 			for card_number in 0..delta as usize {
 				if card_number >= 9 {
@@ -580,7 +582,7 @@ impl Window {
 			
 			*self = Window {
 				content: component_vec,
-				..Self::from_path(format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?
+				..Self::from_path(format!("{}/assets/styles/{}/Window/Window.toml",*ASSETS_PATH , setting.ui_theme))?
 			};
 			self.if_labeled = true;
 		}
@@ -588,7 +590,7 @@ impl Window {
 	}
 
 	fn chart_window(&mut self, label: Vec<String>) -> Result<(),ShapoError> {
-		let chart:Chart = prase_json_form_path(&format!("{}/map.shapoistmap",&label[1]))?;
+		let chart:Chart = parse_json_form_path(&format!("{}/map.shapoistmap",&label[1]))?;
 		let info = PlayInfo::read(chart.mapname.clone());
 		let mut button = Button::default();
 		button.shape[0].style.volume = Rect { min: Pos2 { x: 0.0, y: 0.0 }, max: Pos2 { x: 100.0, y: 100.0} };
@@ -766,7 +768,7 @@ impl Window {
 				..Default::default()
 			})
 		);
-		let mut window = Self::from_path(format!("{}/assets/styles/{}/Window/Window.json",*ASSETS_PATH , setting.ui_theme))?;
+		let mut window = Self::from_path(format!("{}/assets/styles/{}/Window/Window.toml",*ASSETS_PATH , setting.ui_theme))?;
 		window.id = 1003;
 		window.size = Vec2 {x: 82.0, y: 70.0};
 		window.position = Vec2 {x: 10.0, y: 10.0};
