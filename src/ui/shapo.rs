@@ -98,18 +98,7 @@ impl Shapo {
 	}
 
 	pub fn get_rect(&self, size: &Vec2, offect: Option<Vec2>) -> Rect {
-		let offect_vec = match offect {
-			Some(t) => t,
-			None => Vec2 {x: 0.0, y: 0.0},
-		};
-		let mut rect_back = self.style.volume;
-		if !self.style.if_absolute {
-			rect_back.min = (rect_back.min.to_vec2()/100.0 * *size + offect_vec).to_pos2();
-			rect_back.max = (rect_back.max.to_vec2()/100.0 * *size + offect_vec).to_pos2();
-		}else {
-			rect_back.min = (rect_back.min.to_vec2() + offect_vec).to_pos2();
-			rect_back.max = (rect_back.max.to_vec2() + offect_vec).to_pos2();
-		}
+		let rect_back = self.style.get_rectangle(size,offect);
 		rect_back
 	}
 
@@ -205,6 +194,12 @@ impl Shapo {
 
 	pub fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, timer: &mut Vec<Timer>, offect: Option<Vec2>, if_enabled: bool, texture: &HashMap<TextureId,TextureHandle>) -> Result<Vec<Back>, ShapoError>{
 		let mut vec_back = vec!(); 
+		if self.style.volume == (Rect {
+			min: Vec2::new(-1.0,-1.0).to_pos2(),
+			max: Vec2::new(-1.0,-1.0).to_pos2()
+		}) {
+			self.rect_normalize();
+		}
 		if let Some((s,e)) = self.sustain_time {
 			for a in &mut *timer {
 				if a.read()? < s || a.read()? > e {

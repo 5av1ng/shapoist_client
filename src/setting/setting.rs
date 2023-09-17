@@ -89,7 +89,7 @@ pub enum PossibleSettingChange {
 
 pub fn read_settings() -> Result<Setting, ShapoError> {
 	let setting_read = match read_file(&format!("{}/assets/setting.toml", *ASSETS_PATH)){
-		Ok(t) => parse_toml(&t)?,
+		Ok(t) => parse_json(&t)?,
 		Err(_) => {
 			write_file(&format!("{}/assets/setting.toml", *ASSETS_PATH), &to_toml(&Setting::default())?)?;
 			Setting::default()

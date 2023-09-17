@@ -902,13 +902,6 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 		}
 		ui.end_row();
 
-		ui.label(language[74].clone());
-		ui.checkbox(&mut shape.style.if_absolute, language[74].clone());
-		if shape.clone() != backup {
-			back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Style(PossibleStyleChange::IfAbsolute))), String::new());
-		}
-		ui.end_row();
-
 		if let Some((start_time, end_time)) = shape.sustain_time {
 			let mut start_time_beat = start_time as f64 / *uspb as f64;
 			let mut end_time_beat = end_time as f64 / *uspb as f64;

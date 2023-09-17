@@ -27,12 +27,7 @@ impl ShapeRender for Text {
 			Some(t) => t,
 			None => Vec2 {x: 0.0, y: 0.0},
 		};
-		let actual_position: Vec2;
-		if !style.if_absolute {
-			actual_position = ((style.position)/100.0 * style.size) * *size + offect_vec;
-		}else {
-			actual_position = style.position * style.size + offect_vec
-		}
+		let actual_position = style.get_position(size,offect);
 		let text = self.text.get_language()?;
 		let mut text_out = String::new();
 		let mut if_compressed = false;

@@ -1,3 +1,4 @@
+use egui::Align;
 use crate::ui::shape::rectangle::RectangleAnimate;
 use crate::ui::shape::circle::CircleAnimate;
 use crate::ui::shape::bezier_curve::CubicBezierAnimate;
@@ -6,34 +7,45 @@ use crate::ui::shape::bezier_curve::CubicBezier;
 use crate::ui::shape::animation::Animation;
 use crate::setting::setting::*;
 use crate::ShapoError;
-use egui::Pos2;
 use egui::Align2;
 use egui::Color32;
 use egui::Stroke;
 use egui::Rect;
 use egui::Vec2;
 
-#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq, Copy)]
 pub enum Unit {
 	Vc,
 	Em,
-	Px
+	Px,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
+pub struct StyleGrid {
+	pub grid: [usize;2],
+	pub position: [usize;2],
+	pub anchor: Align2
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct Style {
 	pub position: Vec2,
-	pub if_absolute: bool,
+	pub position_unit: [Unit;2],
 	pub size: Vec2,
 	pub rotate: f32,
 	pub rotate_center: Vec2,
+	pub rotate_center_unit: [Unit;2],
+	pub scale_center: Vec2,
+	pub scale_center_unit: [Unit;2],
 	pub fill: Color32,
 	pub stroke: Stroke,
 	pub volume: Rect,
+	pub volume_unit: [[Unit;2];2],
 	pub anchor: Align2,
 	pub text_size: f32,
-	pub layer: Option<LayerId>
+	pub layer: Option<LayerId>,
+	pub grid: StyleGrid,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
@@ -73,17 +85,71 @@ impl Style {
 	pub fn new(position: Vec2, fill: Color32, volume: Rect, layer: Option<LayerId>) -> Self {
 		Self {
 			position,
-			size: Vec2 { x: 1.0, y:1.0 },
-			rotate: 0.0,
-			rotate_center: Vec2 { x: 0.0, y: 0.0 },
-			fill,
-			stroke: Stroke { width: 0.0, color: Color32::from_rgba_premultiplied(0,0,0,0) },
 			volume,
-			anchor: Align2::LEFT_TOP,
-			text_size: 12.0,
-			if_absolute: false,
-			layer
+			fill,
+			layer,
+			..Default::default()
 		}
+	}
+
+	pub fn get_position(&self, size: &Vec2, offect: Option<Vec2>) -> Vec2 {
+		self.get_vec2(size, offect, self.position)
+	}
+
+	pub fn get_rectangle(&self, size: &Vec2, offect: Option<Vec2>) -> Rect {
+		let offect = match offect {
+			Some(t) => t,
+			None => Vec2::new(0.0,0.0)
+		};
+		let min = (get_true_cartesian(&self.volume.min.to_vec2(), &self.volume_unit[0], size) + offect).to_pos2();
+		let max = (get_true_cartesian(&self.volume.max.to_vec2(), &self.volume_unit[1], size) + offect).to_pos2();
+		Rect {
+			min,
+			max
+		}
+	}
+
+	pub fn get_vec2(&self, size: &Vec2, offect: Option<Vec2>, input_position: Vec2) -> Vec2 {
+		fn rotate(rotate_center: Vec2, vec_to_rotate: Vec2, rotate: f32) -> Vec2 {
+			let delta = vec_to_rotate - rotate_center;
+			let middle = Vec2 {
+				x: delta.x * rotate.cos() - delta.y * rotate.sin(),
+				y: delta.x * rotate.sin() + delta.y * rotate.cos()
+			};
+			middle + rotate_center
+		}
+
+		fn scale(scale_center: Vec2, vec_to_scale: Vec2, size: Vec2) -> Vec2 {
+			let delta = vec_to_scale - scale_center;
+			let middle = Vec2::new(
+				delta.x * size.x,
+				delta.y * size.y,
+			);
+			middle + scale_center
+		}
+
+		let grid_ident_vec = *size/Vec2::new(self.grid.grid[0] as f32, self.grid.grid[1] as f32);
+		let grid_anchor = Vec2::new(match self.grid.anchor[0] {
+			Align::Min => 0.0,
+			Align::Max => 1.0,
+			Align::Center => 0.5,
+		},match self.grid.anchor[1] {
+			Align::Min => 0.0,
+			Align::Max => 1.0,
+			Align::Center => 0.5,
+		});
+		let grid_vec = grid_ident_vec * Vec2::new((self.grid.position[0] - 1) as f32, (self.grid.position[1] - 1) as f32) + grid_ident_vec * grid_anchor;
+
+		let position = grid_vec + get_true_cartesian(&input_position, &self.position_unit, size);
+		let scale_center = grid_vec + get_true_cartesian(&self.scale_center, &self.scale_center_unit,size);
+		let rotate_center = grid_vec + get_true_cartesian(&self.rotate_center, &self.rotate_center_unit, size);
+
+		let offect = match offect {
+			Some(t) => t,
+			None => Vec2::new(0.0,0.0)
+		};
+
+		scale(scale_center,rotate(rotate_center,position, self.rotate),self.size) + offect
 	}
 }
 
@@ -91,16 +157,28 @@ impl Default for Style{
 	fn default() -> Self {
 		Self {
 			position: Vec2 { x: 0.0, y: 0.0 },
+			position_unit: [Unit::Vc;2],
 			size: Vec2 { x: 1.0, y:1.0 },
 			rotate: 0.0,
 			rotate_center: Vec2 { x: 0.0, y: 0.0 },
+			rotate_center_unit: [Unit::Vc;2],
+			scale_center: Vec2::new(0.0,0.0),
+			scale_center_unit: [Unit::Vc;2],
 			fill: Color32::WHITE,
 			stroke: Stroke { width: 0.0, color: Color32::TRANSPARENT },
-			volume: Rect { min: Pos2 { x: 0.0, y: 0.0 }, max: Pos2 { x: 10.0, y: 10.0} },
+			volume: Rect {
+				min: Vec2::new(-1.0,-1.0).to_pos2(),
+				max: Vec2::new(-1.0,-1.0).to_pos2()
+			},
 			anchor: Align2::LEFT_TOP,
 			text_size: 12.0,
-			if_absolute: false,
-			layer: None
+			layer: None,
+			volume_unit: [[Unit::Vc;2];2],
+			grid: StyleGrid {
+				grid: [1,1],
+				position: [1,1],
+				anchor: Align2::LEFT_TOP
+			},
 		}
 	}
 }
@@ -195,4 +273,29 @@ pub fn arc_length(mut input: f32, bezier_curve: &CubicBezier) -> Result<Vec2,Sha
 	};
 	let out = bezier_curve_caculate(back, bezier_curve);
 	return Ok(out);
+}
+
+fn get_true_cartesian(position: &Vec2 ,units: &[Unit;2] , size: &Vec2) -> Vec2 {
+	Vec2::new(match units[0]{
+		Unit::Vc => {
+			position.x /100.0 * size.x
+		}
+		Unit::Em => {
+			position.x * 16.0
+		}
+		Unit::Px => {
+			position.x
+		}
+	},
+	match units[1]{
+		Unit::Vc => {
+			position.y /100.0 * size.y
+		}
+		Unit::Em => {
+			position.y * 16.0
+		}
+		Unit::Px => {
+			position.y
+		}
+	},)
 }

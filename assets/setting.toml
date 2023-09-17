@@ -1,22 +1,69 @@
-ui_theme = "Default"
-language = "zh-CN"
-accuracy = 0.00009999999747378752
-if_immaculate = true
-tap_prompt_color = [255, 255, 255, 100]
-slide_prompt_color = [100, 100, 100, 100]
-note_prompt_radius = 1.0
-judge_field_prompt_color = [255, 255, 255, 100]
-judge_field_prompt_size = 0.0
-drop_velocity = 0.000009999999747378752
-immaculate_color = [246, 239, 80, 255]
-extra_color = [67, 187, 252, 255]
-normal_color = [21, 223, 112, 255]
-fade_color = [107, 55, 34, 255]
-miss_color = [255, 255, 255, 255]
-background_color = [213, 170, 255, 255]
-search_depth = 20
-if_tip = true
-volume = 1.0
-undo_steps = 30
-if_shader = false
-offect = 30.0
+{
+  "ui_theme": "Default",
+  "language": "zh-CN",
+  "accuracy": 0.0001,
+  "if_immaculate": true,
+  "tap_prompt_color": [
+    255,
+    255,
+    255,
+    100
+  ],
+  "slide_prompt_color": [
+    100,
+    100,
+    100,
+    100
+  ],
+  "note_prompt_radius": 1.0,
+  "judge_field_prompt_color": [
+    255,
+    255,
+    255,
+    100
+  ],
+  "judge_field_prompt_size": 0.0,
+  "drop_velocity": 0.00001,
+  "immaculate_color": [
+    246,
+    239,
+    80,
+    255
+  ],
+  "extra_color": [
+    67,
+    187,
+    252,
+    255
+  ],
+  "normal_color": [
+    21,
+    223,
+    112,
+    255
+  ],
+  "fade_color": [
+    107,
+    55,
+    34,
+    255
+  ],
+  "miss_color": [
+    255,
+    255,
+    255,
+    255
+  ],
+  "background_color": [
+    213,
+    170,
+    255,
+    255
+  ],
+  "search_depth": 20,
+  "if_tip": true,
+  "volume": 1.0,
+  "undo_steps": 30,
+  "if_shader": false,
+  "offect": 30.0
+}

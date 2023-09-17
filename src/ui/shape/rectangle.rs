@@ -1,7 +1,5 @@
 use crate::ui::shape::bezier_curve::CubicBezier;
-use crate::ui::shapo::rotate;
 use egui::Align;
-use egui::Pos2;
 use crate::ShapoError;
 use egui::Rect;
 use egui::epaint::PathShape;
@@ -41,23 +39,9 @@ impl Default for Rectangle {
 
 impl ShapeRender for Rectangle {
 	fn render(&self, ui: &mut egui::Ui, size: &Vec2, offect: Option<Vec2>, style: &Style) -> Result<(), ShapoError> {
-		let offect_vec = match offect {
-			Some(t) => t,
-			None => Vec2 {x: 0.0, y: 0.0},
-		};
 		if style.rotate == 0.0 {
-			let mut actual_position: Vec2;
-			let mut actual_bottom_left_point: Vec2;
-			if !style.if_absolute {
-				actual_position = (((style.position)/100.0 * style.size) * *size + offect_vec) * style.size;
-				actual_bottom_left_point = ((style.position + self.bottom_right_point)/100.0 * *size + offect_vec) * style.size
-			}else {
-				actual_position = style.position;
-				actual_bottom_left_point = style.position + self.bottom_right_point;
-			}
-			if self.if_keep {
-				actual_bottom_left_point.y = actual_position.y + (actual_bottom_left_point.x - actual_position.x) * self.bottom_right_point.y / self.bottom_right_point.x;
-			}
+			let mut actual_position = style.get_position(size,offect);
+			let mut actual_bottom_left_point = style.get_vec2(size,offect, style.position + self.bottom_right_point);
 			match style.anchor[0] {
 				Align::Min => {}
 				Align::Center => {
@@ -104,21 +88,10 @@ impl ShapeRender for Rectangle {
 					style.stroke);
 			}
 		}else {
-			let point_1: Pos2;
-			let point_2: Pos2;
-			let point_3: Pos2;
-			let point_4: Pos2;
-			if !style.if_absolute {
-				point_1 = (((rotate(style.rotate_center,style.position,style.rotate))/100.0 * *size + offect_vec) * style.size).to_pos2();
-				point_2 = (((rotate(style.rotate_center,Vec2{x: (style.position + self.bottom_right_point).x, y: style.position.y},style.rotate))/100.0 * *size + offect_vec) * style.size).to_pos2();
-				point_3 = (((rotate(style.rotate_center,Vec2{x: style.position.x, y: (style.position + self.bottom_right_point).y},style.rotate))/100.0 * *size + offect_vec) * style.size).to_pos2();
-				point_4 = (((rotate(style.rotate_center,style.position + self.bottom_right_point,style.rotate))/100.0 * *size + offect_vec) * style.size).to_pos2();
-			}else {
-				point_1 = (((rotate(style.rotate_center,style.position,style.rotate)) + offect_vec) * style.size).to_pos2();
-				point_2 = (((rotate(style.rotate_center,Vec2{x: (style.position + self.bottom_right_point).x, y: style.position.y},style.rotate)) + offect_vec) * style.size).to_pos2();
-				point_3 = (((rotate(style.rotate_center,Vec2{x: style.position.x, y: (style.position + self.bottom_right_point).y},style.rotate)) + offect_vec) * style.size).to_pos2();
-				point_4 = (((rotate(style.rotate_center,style.position + self.bottom_right_point,style.rotate)) + offect_vec) * style.size).to_pos2();
-			}
+			let point_1 = style.get_vec2(size,offect,style.position).to_pos2();
+			let point_2 = style.get_vec2(size,offect,Vec2::new((style.position + self.bottom_right_point).x, style.position.y)).to_pos2();
+			let point_3 = style.get_vec2(size,offect,Vec2::new(style.position.x, (style.position + self.bottom_right_point).y)).to_pos2();
+			let point_4 = style.get_vec2(size,offect,style.position + self.bottom_right_point).to_pos2();
 			if let Some(t) = style.layer {
 				ui.ctx().layer_painter(t).add(PathShape::closed_line(vec!(point_1,point_3,point_2,point_4),style.stroke));
 			}else {

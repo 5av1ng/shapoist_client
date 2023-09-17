@@ -1,7 +1,6 @@
 use egui::Rect;
 use egui::Color32;
 use egui::Stroke;
-use crate::ui::shapo::rotate;
 use crate::ShapoError;
 use egui::Vec2;
 use crate::ui::shape::style::Style;
@@ -50,79 +49,47 @@ impl Default for CubicBezier {
 
 impl ShapeRender for CubicBezier {
 	fn render(&self, ui: &mut egui::Ui, size: &Vec2, offect: Option<Vec2>, style: &Style) -> Result<(), ShapoError> {
-		let offect_vec = match offect {
-			Some(t) => t,
-			None => Vec2 {x: 0.0, y: 0.0},
-		};
-		let actual_points: [Pos2; 4];
-		if !style.if_absolute {
-			actual_points = [((rotate(style.rotate_center, self.points[0].to_vec2(), style.rotate) + style.position)/100.0 * *size * style.size + offect_vec).to_pos2(),
-			((rotate(style.rotate_center, self.points[1].to_vec2(), style.rotate) + style.position)/100.0 * *size * style.size + offect_vec).to_pos2(),
-			((rotate(style.rotate_center, self.points[2].to_vec2(), style.rotate) + style.position)/100.0 * *size * style.size + offect_vec).to_pos2(),
-			((rotate(style.rotate_center, self.points[3].to_vec2(), style.rotate) + style.position)/100.0 * *size * style.size + offect_vec).to_pos2()];
-		}else {
-			actual_points = [((rotate(style.rotate_center, self.points[0].to_vec2(), style.rotate) + style.position) * style.size + offect_vec).to_pos2(),
-			((rotate(style.rotate_center, self.points[1].to_vec2(), style.rotate) + style.position) * style.size + offect_vec).to_pos2(),
-			((rotate(style.rotate_center, self.points[2].to_vec2(), style.rotate) + style.position) * style.size + offect_vec).to_pos2(),
-			((rotate(style.rotate_center, self.points[3].to_vec2(), style.rotate) + style.position) * style.size + offect_vec).to_pos2()];
+		fn draw(painter: &egui::Painter, actual_points: [Pos2;4], style: &Style, if_close: bool) {
+			let paint = CubicBezierShape::from_points_stroke(
+				actual_points,
+				if_close,
+				style.fill,
+				style.stroke);
+			painter.add(paint);
+			painter.add(CircleShape{
+				center: actual_points[0],
+				radius: 2.0,
+				fill: style.fill,
+				stroke: style.stroke,
+			});
+			painter.add(CircleShape{
+				center: actual_points[1],
+				radius: 2.0,
+				fill: style.fill,
+				stroke: style.stroke,
+			});
+			painter.add(CircleShape{
+				center: actual_points[2],
+				radius: 2.0,
+				fill: style.fill,
+				stroke: style.stroke,
+			});
+			painter.add(CircleShape{
+				center: actual_points[3],
+				radius: 2.0,
+				fill: style.fill,
+				stroke: style.stroke,
+			});
 		}
-		let paint = CubicBezierShape::from_points_stroke(
-			actual_points,
-			self.if_close,
-			style.fill,
-			style.stroke);
+
+		let actual_points = [(style.get_vec2(size, offect, self.points[0].to_vec2() + style.position)).to_pos2(),
+			(style.get_vec2(size, offect, self.points[1].to_vec2() + style.position)).to_pos2(),
+			(style.get_vec2(size, offect, self.points[2].to_vec2() + style.position)).to_pos2(),
+			(style.get_vec2(size, offect, self.points[3].to_vec2() + style.position)).to_pos2()];
 		if let Some(t) = style.layer {
-			ui.ctx().layer_painter(t).add(paint);
-			ui.ctx().layer_painter(t).add(CircleShape{
-				center: actual_points[0],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
-			ui.ctx().layer_painter(t).add(CircleShape{
-				center: actual_points[1],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
-			ui.ctx().layer_painter(t).add(CircleShape{
-				center: actual_points[2],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
-			ui.ctx().layer_painter(t).add(CircleShape{
-				center: actual_points[3],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
+			draw(&ui.ctx().layer_painter(t), actual_points, style, self.if_close)
 		}else {
-			ui.painter().add(paint);
-			ui.painter().add(CircleShape{
-				center: actual_points[0],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
-			ui.painter().add(CircleShape{
-				center: actual_points[1],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
-			ui.painter().add(CircleShape{
-				center: actual_points[2],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
-			ui.painter().add(CircleShape{
-				center: actual_points[3],
-				radius: 2.0,
-				fill: style.fill,
-				stroke: style.stroke,
-			});
+			draw(ui.painter(), actual_points, style, self.if_close)
 		}
 		Ok(())
 	}

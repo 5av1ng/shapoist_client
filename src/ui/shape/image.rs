@@ -1,5 +1,4 @@
 use crate::ASSETS_PATH;
-use egui::Pos2;
 use egui::Align;
 use std::collections::HashMap;
 use egui::TextureHandle;
@@ -46,10 +45,6 @@ impl Default for Image {
 
 impl Image {
 	pub fn render(&mut self, ui: &mut Ui, size: &Vec2, offect: Option<Vec2>, style: &Style, texture: &HashMap<TextureId,TextureHandle>) -> Result<Back, ShapoError> {
-		let offect = match offect {
-			Some(t) => t,
-			None => Vec2{x:0.0,y:0.0},
-		};
 		let handle:TextureHandle;
 		let setting  = read_settings()?;
 		let path = match self.first_path {
@@ -64,18 +59,9 @@ impl Image {
 		}else {
 			handle = texture.get(&self.registered_info.unwrap()).unwrap().clone()
 		}
-		let mut actual_position: Pos2;
-		let mut actual_bottom_left_point: Pos2;
-		let mut image_size: Vec2;
-		if style.if_absolute {
-			actual_position = (style.position + offect).to_pos2();
-			actual_bottom_left_point = (style.position + offect + self.bottom_right_point).to_pos2();
-			image_size = self.bottom_right_point;
-		}else {
-			actual_position = (style.position / 100.0 * *size + offect).to_pos2();
-			actual_bottom_left_point = ((style.position + self.bottom_right_point) / 100.0 * *size + offect).to_pos2();
-			image_size = self.bottom_right_point / 100.0 * *size
-		}
+		let mut actual_position = style.get_position(size, offect).to_pos2();
+		let mut actual_bottom_left_point = style.get_vec2(size,offect,style.position + self.bottom_right_point).to_pos2();
+		let mut image_size= style.get_vec2(size,None,self.bottom_right_point);
 		if self.if_keep {
 			actual_bottom_left_point.y = actual_position.y + (actual_bottom_left_point.x - actual_position.x) * self.bottom_right_point.y / self.bottom_right_point.x;
 			image_size.y = image_size.x  * self.bottom_right_point.y / self.bottom_right_point.x;

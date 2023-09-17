@@ -19,8 +19,8 @@ serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 eframe = { version = "0.22", features = [ "wgpu", "android-game-activity" ] }
 image = "0.24.6"
-# pest = "2.7.1"
-# pest_derive = "2.7.1"
+pest = "2.7.1"
+pest_derive = "2.7.1"
 kira = "0.8.4"
 rand = "0.8.5"
 utf8_slice = "1.0.0"
