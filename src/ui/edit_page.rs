@@ -1,3 +1,4 @@
+use crate::system::command::command_parse;
 use crate::ASSETS_PATH;
 use crate::ui::shape::style::ShapeAnimate;
 use egui::Rect;
@@ -1333,7 +1334,7 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Te
 				}
 			}
 
-			let mut rects: Vec<(Rect, f64, f64)> = vec!();
+			let mut rects: Vec<(Rect, f64, f64, PossibleChartSelection)> = vec!();
 			let mut x = 0.0;
 
 			let inner = ui.vertical(|ui| -> Result<Vec<Back>, ShapoError> {
@@ -1365,7 +1366,7 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Te
 								Ok(vec_back)
 							});
 
-							rects.push((collapsing_note.header_response.rect, (b[n].click_time as f64 - b[n].start_time as f64) / temp.chart.length as f64, b[n].start_time as f64 / temp.chart.length as f64));
+							rects.push((collapsing_note.header_response.rect, (b[n].click_time as f64 - b[n].start_time as f64) / temp.chart.length as f64, b[n].start_time as f64 / temp.chart.length as f64, PossibleChartSelection::Note(*a, n)));
 
 							if let Some(t) = collapsing_note.body_returned {
 								for a in t? {
@@ -1377,7 +1378,7 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Te
 						Ok(vec_back)
 					});
 					let rect = collapsing.header_response.rect;
-					rects.push((rect, (temp.project.chart.judge_field[*a].end_time as f64 - temp.project.chart.judge_field[*a].start_time as f64) / temp.chart.length as f64, temp.project.chart.judge_field[*a].start_time as f64 / temp.chart.length as f64));
+					rects.push((rect, (temp.project.chart.judge_field[*a].end_time as f64 - temp.project.chart.judge_field[*a].start_time as f64) / temp.chart.length as f64, temp.project.chart.judge_field[*a].start_time as f64 / temp.chart.length as f64, PossibleChartSelection::JudgeField(*a)));
 					if collapsing.body_response.is_some() {
 						x = collapsing.body_response.unwrap().rect.width();
 					}else {
@@ -1401,7 +1402,7 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Te
 							Ok(Back::Nothing)
 						});
 
-						rects.push((collapsing_shape.header_response.rect, (s.sustain_time.unwrap().1 as f64 - s.sustain_time.unwrap().0 as f64) / temp.chart.length as f64, s.sustain_time.unwrap().0 as f64 / temp.chart.length as f64));
+						rects.push((collapsing_shape.header_response.rect, (s.sustain_time.unwrap().1 as f64 - s.sustain_time.unwrap().0 as f64) / temp.chart.length as f64, s.sustain_time.unwrap().0 as f64 / temp.chart.length as f64, PossibleChartSelection::Shape(s.label.clone()[0].parse::<usize>().unwrap())));
 
 						if let Some(t) = collapsing_shape.body_response {
 							if x < t.rect.width() {
@@ -1450,7 +1451,7 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Te
 			let now = scroll.state.offset.x;
 			let timw_offect = 16.0;
 
-			for (mut rect, times, start_times) in rects {
+			for (mut rect, times, start_times, select) in rects {
 				rect.min.x =  x + timw_offect - now + start_times as f32 * total_length;
 				rect.set_width(total_length * times as f32);
 
@@ -1467,11 +1468,11 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Te
 				if rect.is_positive() {
 					let res = ui.allocate_rect(rect, egui::Sense::click_and_drag());
 
-					if res.clicked() || res.dragged() {
-						let width = rect.width();
-						rect.min.x = rect.min.x + res.drag_delta().x;
-						rect.set_width(width);
-						// println!("{:#?}", res.drag_delta());
+					if res.dragged() {
+						temp.project.now_select = Some(select);
+						let time = (res.drag_delta().x / total_length * temp.project.chart.length as f32) as u64;
+						command_parse(&format!("change select click_time = {}", time), temp, true)?;
+						command_parse(&format!("change select start_time = {}", time), temp, true)?;
 					}	
 				}
 			}

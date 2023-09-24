@@ -130,7 +130,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -243,7 +243,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               641710,
               1754275
@@ -346,7 +346,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               641710,
               1754275
@@ -449,7 +449,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               641710,
               1754275
@@ -470,7 +470,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -596,7 +596,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -709,7 +709,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3208550,
               4641970
@@ -812,7 +812,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3208550,
               4641970
@@ -915,7 +915,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3208550,
               4641970
@@ -936,7 +936,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -1049,7 +1049,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3529405,
               4962825
@@ -1152,7 +1152,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3529405,
               4962825
@@ -1255,7 +1255,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3529405,
               4962825
@@ -1276,7 +1276,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -1389,7 +1389,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3850260,
               5283680
@@ -1492,7 +1492,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3850260,
               5283680
@@ -1595,7 +1595,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               3850260,
               5283680
@@ -1616,7 +1616,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -1729,7 +1729,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4171115,
               5604535
@@ -1832,7 +1832,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4171115,
               5604535
@@ -1935,7 +1935,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4171115,
               5604535
@@ -1956,7 +1956,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -2069,7 +2069,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4491970,
               5925390
@@ -2172,7 +2172,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4491970,
               5925390
@@ -2275,7 +2275,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4491970,
               5925390
@@ -2296,7 +2296,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -2409,7 +2409,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4812825,
               6246245
@@ -2512,7 +2512,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4812825,
               6246245
@@ -2615,7 +2615,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               4812825,
               6246245
@@ -2636,7 +2636,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -2749,7 +2749,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5133680,
               6567100
@@ -2852,7 +2852,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5133680,
               6567100
@@ -2955,7 +2955,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5133680,
               6567100
@@ -2976,7 +2976,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -3089,7 +3089,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3192,7 +3192,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3295,7 +3295,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3316,7 +3316,7 @@
         },
         "judge_type": "Slide",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -3429,7 +3429,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3532,7 +3532,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3635,7 +3635,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3656,7 +3656,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -3769,7 +3769,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3872,7 +3872,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3975,7 +3975,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5454535,
               6887955
@@ -3996,7 +3996,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -4109,7 +4109,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5775390,
               7208810
@@ -4212,7 +4212,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5775390,
               7208810
@@ -4315,7 +4315,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               5775390,
               7208810
@@ -4336,7 +4336,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -4449,7 +4449,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6096245,
               7529665
@@ -4552,7 +4552,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6096245,
               7529665
@@ -4655,7 +4655,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6096245,
               7529665
@@ -4676,7 +4676,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -4789,7 +4789,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6417100,
               7850520
@@ -4892,7 +4892,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6417100,
               7850520
@@ -4995,7 +4995,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6417100,
               7850520
@@ -5016,7 +5016,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -5129,7 +5129,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6737955,
               8171375
@@ -5232,7 +5232,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6737955,
               8171375
@@ -5335,7 +5335,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               6737955,
               8171375
@@ -5356,7 +5356,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -5469,7 +5469,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7058810,
               8492230
@@ -5572,7 +5572,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7058810,
               8492230
@@ -5675,7 +5675,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7058810,
               8492230
@@ -5696,7 +5696,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -5809,7 +5809,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7379665,
               8813085
@@ -5912,7 +5912,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7379665,
               8813085
@@ -6015,7 +6015,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7379665,
               8813085
@@ -6036,7 +6036,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -6149,7 +6149,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7700520,
               9133940
@@ -6252,7 +6252,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7700520,
               9133940
@@ -6355,7 +6355,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               7700520,
               9133940
@@ -6376,7 +6376,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -6489,7 +6489,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               8663085,
               9454795
@@ -6592,7 +6592,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               8663085,
               9454795
@@ -6695,7 +6695,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               8663085,
               9454795
@@ -6716,7 +6716,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -6829,7 +6829,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               8983940,
               9775650
@@ -6932,7 +6932,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               8983940,
               9775650
@@ -7035,7 +7035,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               8983940,
               9775650
@@ -7056,7 +7056,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -7169,7 +7169,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               9304795,
               10096505
@@ -7272,7 +7272,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               9304795,
               10096505
@@ -7375,7 +7375,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               9304795,
               10096505
@@ -7396,7 +7396,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -7509,7 +7509,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               9625650,
               10417360
@@ -7612,7 +7612,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               9625650,
               10417360
@@ -7715,7 +7715,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               9625650,
               10417360
@@ -7736,7 +7736,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -7862,7 +7862,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -7988,7 +7988,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8114,7 +8114,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8240,7 +8240,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8366,7 +8366,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8492,7 +8492,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8618,7 +8618,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8744,7 +8744,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8870,7 +8870,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -8996,7 +8996,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9122,7 +9122,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9248,7 +9248,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9374,7 +9374,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9500,7 +9500,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9626,7 +9626,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9752,7 +9752,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -9878,7 +9878,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10004,7 +10004,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10130,7 +10130,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10256,7 +10256,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10382,7 +10382,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10508,7 +10508,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10634,7 +10634,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10760,7 +10760,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -10886,7 +10886,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11012,7 +11012,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11138,7 +11138,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11264,7 +11264,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11390,7 +11390,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11516,7 +11516,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11642,7 +11642,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11768,7 +11768,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -11894,7 +11894,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12020,7 +12020,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12146,7 +12146,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12272,7 +12272,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12398,7 +12398,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12524,7 +12524,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12650,7 +12650,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12776,7 +12776,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -12902,7 +12902,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13028,7 +13028,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13154,7 +13154,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13280,7 +13280,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13406,7 +13406,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13532,7 +13532,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13658,7 +13658,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13784,7 +13784,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -13910,7 +13910,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14036,7 +14036,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14162,7 +14162,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14288,7 +14288,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14414,7 +14414,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14540,7 +14540,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14666,7 +14666,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14792,7 +14792,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -14918,7 +14918,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15044,7 +15044,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15170,7 +15170,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15296,7 +15296,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15422,7 +15422,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15548,7 +15548,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15674,7 +15674,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15800,7 +15800,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -15926,7 +15926,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16052,7 +16052,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16178,7 +16178,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16304,7 +16304,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16430,7 +16430,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16556,7 +16556,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16664,7 +16664,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16772,7 +16772,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16880,7 +16880,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -16988,7 +16988,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -17096,7 +17096,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -17204,7 +17204,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       },
       {
@@ -17317,7 +17317,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               20855575,
               22288995
@@ -17420,7 +17420,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               20855575,
               22288995
@@ -17523,7 +17523,7 @@
                 "id": 1
               }
             ],
-            "label": null,
+            
             "sustain_time": [
               20855575,
               22288995
@@ -17544,7 +17544,7 @@
         },
         "judge_type": "Tap",
         "judge": "None",
-        "label": null,
+        
         "if_delete": false
       }
     ]
@@ -17571,8 +17571,7 @@
         "x": 50.0,
         "y": 50.0
       },
-      "key": "A",
-      "label": null
+      "key": "A"
     }
   ],
   "shape": [

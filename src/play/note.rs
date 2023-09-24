@@ -1277,8 +1277,10 @@ impl Sub for Note {
 				for a in other.shape.unwrap() {
 					let mut c = a.clone();
 					for b in self.shape.clone().unwrap() {
-						if b.label.clone()[0] == a.label.clone()[0] {
-							c = b - a.clone();
+						if !b.label.is_empty() && !a.label.is_empty() {
+							if b.label.clone()[0] == a.label.clone()[0] {
+								c = b - a.clone();
+							}
 						}
 					}
 					out_shape.push(c);
@@ -1289,8 +1291,10 @@ impl Sub for Note {
 				for a in self.shape.unwrap() {
 					let mut c = a.clone();
 					for b in other.shape.clone().unwrap() {
-						if b.label.clone()[0] == a.label.clone()[0] {
-							c = a.clone() - b;
+						if !b.label.is_empty() && !a.label.is_empty() {
+							if b.label.clone()[0] == a.label.clone()[0] {
+								c = a.clone() - b;
+							}
 						}
 					}
 					out_shape.push(c);

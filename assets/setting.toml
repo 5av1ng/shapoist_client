@@ -22,7 +22,7 @@
     255,
     100
   ],
-  "judge_field_prompt_size": 0.0,
+  "judge_field_prompt_size": 1.0,
   "drop_velocity": 0.00001,
   "immaculate_color": [
     246,

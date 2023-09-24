@@ -353,7 +353,14 @@ impl Sub for Shapo {
 		if other.sustain_time.is_none() || self.sustain_time.is_none() {
 			sustain_time = self.sustain_time;
 		}else {
-			sustain_time = Some((self.sustain_time.unwrap().0 - other.sustain_time.unwrap().0,self.sustain_time.unwrap().1 - other.sustain_time.unwrap().1))
+			sustain_time = Some((match self.sustain_time.unwrap().0.checked_sub(other.sustain_time.unwrap().0) {
+				Some(t) => t,
+				None => 0,
+			},
+			match self.sustain_time.unwrap().1.checked_sub(other.sustain_time.unwrap().1) {
+				Some(t) => t,
+				None => 0,
+			}))
 		}
 
 		let mut animation = vec!();

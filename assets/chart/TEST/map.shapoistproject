@@ -118,7 +118,7 @@
                   "id": 1
                 }
               ],
-              "label": null,
+              
               "sustain_time": [
                 0,
                 99999999999999
@@ -221,7 +221,7 @@
                   "id": 1
                 }
               ],
-              "label": null,
+              
               "sustain_time": [
                 0,
                 99999999999999
@@ -324,7 +324,7 @@
                   "id": 1
                 }
               ],
-              "label": null,
+              
               "sustain_time": [
                 0,
                 99999999999999
@@ -345,7 +345,7 @@
           },
           "judge_type": "Tap",
           "judge": "None",
-          "label": null,
+          
           "if_delete": false
         }
       ]

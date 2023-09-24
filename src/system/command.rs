@@ -1,3 +1,4 @@
+use crate::log_export::log_export::print_log;
 use pest::iterators::Pair;
 use crate::play::note::Note;
 use crate::play::note::JudgeField;
@@ -28,7 +29,7 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 	}.next() {
 		Some(t) => t,
 		None => return Err(ShapoError::ParseError(ParseError::InvaildCommand))
-	};
+	}.into_inner().next().unwrap();
 
 	match file.as_rule() {
 		Rule::Change => {
@@ -73,7 +74,7 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 						}
 					},
 					Rule::Toml => {
-						let text = change.into_inner().next().unwrap().as_str();
+						let text = change.as_str();
 						let now_change = match &temp.project.now_select {
 							Some(t) => t,
 							None => {
@@ -349,6 +350,8 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 	if if_save_command {
 		temp.commands.push(input.to_string());
 	}
+
+	print_log(input);
 
 	Ok(())
 }
