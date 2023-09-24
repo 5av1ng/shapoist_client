@@ -330,8 +330,8 @@ impl PlayTop {
 									Some(t) => t,
 									None => 0
 								};
-								a.animation[1].start_time = Some(time + a.animation[0].animate_time);
-								a.animation[0].start_time = read.clicked_time;
+								a.animation[1].start_time = time + a.animation[0].animate_time;
+								a.animation[0].start_time = time;
 							}
 							for a in ce {
 								self.chart.shape.push(a);

@@ -1,3 +1,5 @@
+use std::ops::Sub;
+use std::ops::Add;
 use egui::Align;
 use crate::ui::shape::rectangle::RectangleAnimate;
 use crate::ui::shape::circle::CircleAnimate;
@@ -75,7 +77,7 @@ pub struct StyleAnimation {
 	pub start_value: f32,
 	pub end_value: f32,
 	pub animation: Animation,
-	pub start_time: Option<u64>,
+	pub start_time: u64,
 	pub animate_time: u64,
 	pub if_animating: bool,
 	pub id: usize
@@ -183,17 +185,87 @@ impl Default for Style{
 	}
 }
 
+impl Add for Style {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		Self {
+			position: self.position + other.position,
+			size: self.size * other.size,
+			rotate: self.rotate + other.rotate,
+			rotate_center: self.rotate_center + other.rotate_center,
+			scale_center: self.scale_center + other.scale_center,
+			fill: Color32::from_rgba_premultiplied(self.fill.r() + other.fill.r(), self.fill.g() + other.fill.g(), self.fill.b() + other.fill.b(), self.fill.a() + other.fill.a()),
+			stroke: Stroke { 
+				width: self.stroke.width + other.stroke.width, 
+				color: Color32::from_rgba_premultiplied(self.stroke.color.r() + other.stroke.color.r(), self.stroke.color.g() + other.stroke.color.g(), self.stroke.color.b() + other.stroke.color.b(), self.stroke.color.a() + other.stroke.color.a()), 
+			},
+			..self
+		}
+	}
+}
+
+impl Sub for Style {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		Self {
+			position: self.position - other.position,
+			size: self.size / other.size,
+			rotate: self.rotate - other.rotate,
+			rotate_center: self.rotate_center - other.rotate_center,
+			scale_center: self.scale_center - other.scale_center,
+			fill: Color32::from_rgba_premultiplied(self.fill.r() - other.fill.r(), self.fill.g() - other.fill.g(), self.fill.b() - other.fill.b(), self.fill.a() - other.fill.a()),
+			stroke: Stroke { 
+				width: self.stroke.width + other.stroke.width, 
+				color: Color32::from_rgba_premultiplied(self.stroke.color.r() - other.stroke.color.r(), self.stroke.color.g() - other.stroke.color.g(), self.stroke.color.b() - other.stroke.color.b(), self.stroke.color.a() - other.stroke.color.a()), 
+			},
+			..self
+		}
+	}
+}
+
 impl Default for StyleAnimation {
 	fn default()-> Self {
 		Self{
 			style: StyleAnimate::Position(CubicBezier::default()),
 			start_value: 0.0,
-			end_value: 6.0,
+			end_value: 0.0,
 			animation: Animation::default(),
-			start_time: None,
-			animate_time: 5 * 1e6 as u64,
+			start_time: 0,
+			animate_time: 0,
 			if_animating: false,
 			id: 1
+		}
+	}
+}
+
+impl Add for StyleAnimation {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		Self {
+			start_value: self.start_value + other.start_value,
+			end_value: self.end_value + other.end_value,
+			animation: self.animation + other.animation,
+			start_time: self.start_time + other.start_time,
+			animate_time: self.animate_time + other.animate_time,
+			..self
+		}
+	}
+}
+
+impl Sub for StyleAnimation {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		Self {
+			start_value: self.start_value - other.start_value,
+			end_value: self.end_value - other.end_value,
+			animation: self.animation - other.animation,
+			start_time: self.start_time - other.start_time,
+			animate_time: self.animate_time - other.animate_time,
+			..self
 		}
 	}
 }

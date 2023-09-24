@@ -1,3 +1,5 @@
+use std::ops::Sub;
+use std::ops::Add;
 use crate::ui::shape::bezier_curve::CubicBezier;
 use egui::Align;
 use crate::ShapoError;
@@ -30,7 +32,7 @@ pub enum RectangleAnimate {
 impl Default for Rectangle {
 	fn default() -> Self {
 		Self {
-			bottom_right_point: Vec2 { x: 10.0, y: 10.0 },
+			bottom_right_point: Vec2 { x: 0.0, y: 0.0 },
 			if_keep: false,
 			rounding: Rounding::none(),
 		}
@@ -108,6 +110,40 @@ impl Rectangle {
 			bottom_right_point,
 			if_keep: false,
 			rounding
+		}
+	}
+}
+
+impl Add for Rectangle {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		Self {
+			bottom_right_point: self.bottom_right_point + other.bottom_right_point,
+			rounding: Rounding {
+				nw: self.rounding.nw + other.rounding.nw,
+				ne: self.rounding.ne + other.rounding.ne,
+				sw: self.rounding.sw + other.rounding.sw,
+				se: self.rounding.se + other.rounding.se,
+			},
+			if_keep: other.if_keep,
+		}
+	}
+}
+
+impl Sub for Rectangle {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		Self {
+			bottom_right_point: self.bottom_right_point - other.bottom_right_point,
+			rounding: Rounding {
+				nw: self.rounding.nw - other.rounding.nw,
+				ne: self.rounding.ne - other.rounding.ne,
+				sw: self.rounding.sw - other.rounding.sw,
+				se: self.rounding.se - other.rounding.se,
+			},
+			if_keep: self.if_keep,
 		}
 	}
 }

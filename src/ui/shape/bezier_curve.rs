@@ -1,3 +1,5 @@
+use std::ops::Sub;
+use std::ops::Add;
 use egui::Rect;
 use egui::Color32;
 use egui::Stroke;
@@ -39,9 +41,9 @@ impl Default for CubicBezier {
 			if_close: false,
 			points: [
 				Pos2 { x: 0.0, y: 0.0 },
-				Pos2 { x: 5.0, y: 30.0 },
-				Pos2 { x: 25.0, y: 0.0 },
-				Pos2 { x: 30.0, y: 10.0 },
+				Pos2 { x: 0.0, y: 0.0 },
+				Pos2 { x: 0.0, y: 0.0 },
+				Pos2 { x: 0.0, y: 0.0 },
 			]
 		}
 	}
@@ -106,5 +108,37 @@ impl CubicBezier {
 				color: Color32::BLACK,
 			});
 		paint.visual_bounding_rect()
+	}
+}
+
+impl Add for CubicBezier {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self {
+		Self {
+			points: [
+				(self.points[0].to_vec2() + other.points[0].to_vec2()).to_pos2(),
+				(self.points[1].to_vec2() + other.points[1].to_vec2()).to_pos2(),
+				(self.points[2].to_vec2() + other.points[2].to_vec2()).to_pos2(),
+				(self.points[3].to_vec2() + other.points[3].to_vec2()).to_pos2()
+			],
+			if_close: other.if_close,
+		}
+	}
+}
+
+impl Sub for CubicBezier {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self {
+		Self {
+			points: [
+				(self.points[0].to_vec2() - other.points[0].to_vec2()).to_pos2(),
+				(self.points[1].to_vec2() - other.points[1].to_vec2()).to_pos2(),
+				(self.points[2].to_vec2() - other.points[2].to_vec2()).to_pos2(),
+				(self.points[3].to_vec2() - other.points[3].to_vec2()).to_pos2()
+			],
+			if_close: self.if_close,
+		}
 	}
 }

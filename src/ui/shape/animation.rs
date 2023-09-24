@@ -1,3 +1,5 @@
+use std::ops::Sub;
+use std::ops::Add;
 use crate::ShapoError;
 use crate::setting::setting::*;
 use egui::Vec2;
@@ -12,12 +14,33 @@ pub struct Animation {
 impl Default for Animation {
 	fn default() -> Self {
 		Self {
-			control_point_one: Vec2 { x: 0.5, y: 0.5},
-			control_point_two: Vec2 { x: 0.5, y: 0.5}
+			control_point_one: Vec2 { x: 0.0, y: 0.0},
+			control_point_two: Vec2 { x: 0.0, y: 0.0}
 		}
 	}
 }
 
+impl Add for Animation {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self {
+		Self {
+			control_point_one: self.control_point_one + other.control_point_one,
+			control_point_two: self.control_point_two + other.control_point_two,
+		}
+	}
+}
+
+impl Sub for Animation {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self {
+		Self {
+			control_point_one: self.control_point_one - other.control_point_one,
+			control_point_two: self.control_point_two - other.control_point_two,
+		}
+	}
+}
 
 /*
 $$

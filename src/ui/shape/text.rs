@@ -1,3 +1,5 @@
+use core::ops::Sub;
+use std::ops::Add;
 use egui::{Rect, Color32};
 use crate::ShapoError;
 use crate::ui::shape::style::Style;
@@ -16,7 +18,7 @@ pub struct Text {
 impl Default for Text {
 	fn default() -> Self {
 		Self {
-			text: Language::Code(0)
+			text: Language::Text(String::new())
 		}
 	}
 }
@@ -108,4 +110,31 @@ pub fn get_rect(string: String, text_size: f32, ui: &mut egui::Ui, size: &Vec2) 
 	back.max.x = back.max.x / size.x * 100.0;
 	back.max.y = back.max.y / size.y * 100.0;
 	back
+}
+
+impl Add for Text {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		match self.text {
+			Language::Text(txt) => {
+				if let Language::Text(txt2) = other.text {
+					return Self {
+						text: Language::Text(txt + &txt2),
+					}
+				}else  {
+					return Self { text: Language::Text(txt) }
+				}
+			}
+			_ => return self
+		}
+	}
+}
+
+impl Sub for Text {
+	type Output = Self;
+
+	fn sub(self, _: Self) -> Self::Output {
+		return self
+	}
 }

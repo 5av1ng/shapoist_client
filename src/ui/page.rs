@@ -62,6 +62,7 @@ pub struct Temp {
 	pub image_path: String,
 	pub now_project_path: String,
 	pub undo_times: usize,
+	pub commands: Vec<String>
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -101,6 +102,7 @@ impl Default for Temp {
 			project: Project::default(),
 			now_project_path: String::new(),
 			undo_times: 0,
+			commands: vec!(),
 		}
 	}
 }

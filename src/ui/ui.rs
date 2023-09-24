@@ -196,7 +196,7 @@ impl Display {
 			};
 		}
 		if let Router::EditPage = router {
-			for a in edit_page(ui, size, &mut self.timer, self.if_normal, texture, temp, file)? {
+			for a in edit_page(ui, size, &mut self.timer, self.if_normal, texture, temp, file, size)? {
 				back_vec.push(a);
 			}
 		}else {

@@ -1,3 +1,5 @@
+use std::ops::Sub;
+use std::ops::Add;
 use crate::ASSETS_PATH;
 use egui::Align;
 use std::collections::HashMap;
@@ -36,7 +38,7 @@ impl Default for Image {
 			name: String::from("Test"),
 			first_path: Path::Styles,
 			path: String::from("Icons/setting.png"),
-			bottom_right_point: Vec2{x: 28.0, y: 28.0},
+			bottom_right_point: Vec2{x: 0.0, y: 0.0},
 			if_keep: false,
 			registered_info: None
 		}
@@ -94,5 +96,35 @@ impl Image {
 		}
 		ui.put(Rect{min: actual_position, max: actual_bottom_left_point}, egui::widgets::Image::new(texture.get(&handle.id()).unwrap(),image_size));
 		Ok(Back::Nothing)
+	}
+}
+
+impl Add for Image {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		Self {
+			name: self.name,
+			first_path: self.first_path,
+			path: self.path,
+			bottom_right_point: self.bottom_right_point + other.bottom_right_point,
+			registered_info: self.registered_info,
+			if_keep: other.if_keep,
+		}
+	}
+}
+
+impl Sub for Image {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		Self {
+			name: self.name,
+			first_path: self.first_path,
+			path: self.path,
+			bottom_right_point: self.bottom_right_point - other.bottom_right_point,
+			registered_info: self.registered_info,
+			if_keep: other.if_keep,
+		}
 	}
 }

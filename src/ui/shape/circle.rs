@@ -1,3 +1,5 @@
+use std::ops::Sub;
+use std::ops::Add;
 use crate::ShapoError;
 use crate::ui::shape::style::Style;
 use egui::Vec2;
@@ -22,7 +24,7 @@ pub enum CircleAnimate {
 impl Default for Circle {
 	fn default() -> Self {
 		Self {
-			radius: 5.0
+			radius: 0.0
 		}
 	}
 }
@@ -56,5 +58,25 @@ impl ShapeRender for Circle {
 				style.stroke);
 		}
 		Ok(())
+	}
+}
+
+impl Add for Circle {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		Self {
+			radius: self.radius + other.radius
+		}
+	}
+}
+
+impl Sub for Circle {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		Self {
+			radius: self.radius - other.radius
+		}
 	}
 }

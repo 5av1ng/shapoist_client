@@ -7,7 +7,6 @@ use crate::ui::shape::style::StyleAnimate;
 use crate::ui::shape::style::StyleAnimation;
 use crate::ui::shape::style::Style;
 use egui::Stroke;
-use std::collections::BTreeMap;
 use core::f32::consts::PI;
 use crate::ui::shape::bezier_curve::*;
 use crate::ui::shape::rectangle::*;
@@ -37,15 +36,13 @@ use crate::ui::ui::Back;
 use crate::ShapoError;
 use crate::play::note::EditPages;
 
-pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bool, texture: &HashMap<TextureId,TextureHandle>, temp: &mut Temp, _file: &Vec<DroppedFile>) -> Result<Vec<Back>, ShapoError> {
+pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bool, texture: &HashMap<TextureId,TextureHandle>, temp: &mut Temp, _file: &Vec<DroppedFile>, size: &Vec2) -> Result<Vec<Back>, ShapoError> {
 	temp.project.timer()?;
 	let uspb = (60.0 * 1e6 / temp.project.chart.bpm) as u64;
 	let setting = read_settings()?;
 	let language = read_file_split(&format!("{}/assets/language/{}/language.ini",*ASSETS_PATH , setting.language))?;
 	let mut vec_back = vec!();
 	let mut input = ui.input_mut(|i| i.clone());
-	let mut if_shape_delete = false;
-	let mut if_note_delete = false;
 
 	if !temp.project.if_playing && temp.project.if_music_play {
 		vec_back.push(Back::Pause)
@@ -129,7 +126,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					chart.shape.push(Shapo{
 						shape: Shape::Circle(Circle::default()),
 						sustain_time: Some((none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb, (current_beat as u64 + 4) * uspb)),
-						label: Some(vec!(temp.project.now_shape_id.to_string())),
+						label: vec!(temp.project.now_shape_id.to_string()),
 						..Default::default()
 					});
 					temp.project.now_shape_id = temp.project.now_shape_id + 1;
@@ -140,7 +137,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					chart.shape.push(Shapo{
 						shape: Shape::Rectangle(Rectangle::default()),
 						sustain_time: Some((none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb, (current_beat as u64 + 4) * uspb)),
-						label: Some(vec!(temp.project.now_shape_id.to_string())),
+						label: vec!(temp.project.now_shape_id.to_string()),
 						..Default::default()
 					});
 					temp.project.now_shape_id = temp.project.now_shape_id + 1;
@@ -156,7 +153,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 							..Default::default()
 						},
 						sustain_time: Some((none_to_zero(&(current_beat as u64).checked_sub(4)) * uspb, (current_beat as u64 + 4) * uspb)),
-						label: Some(vec!(temp.project.now_shape_id.to_string())),
+						label: vec!(temp.project.now_shape_id.to_string()),
 						..Default::default()
 					});
 					temp.project.now_shape_id = temp.project.now_shape_id + 1;
@@ -381,7 +378,9 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 	// Render
 	match temp.project.now_page {
 		EditPages::Timeline => {
-			ui.label(language[0].clone());
+			for a in timeline(ui,&language,&uspb,temp,size, &current_beat)? {
+				vec_back.push(a);
+			};
 		},
 		EditPages::View => {
 			let available_size = ui.available_size() + Vec2{ x: 16.0, y: 16.0 };
@@ -420,7 +419,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					match t {
 						RenderType::Shape(s) => {
 							for a in &mut temp.project.chart.shape {
-								if a.label.clone().unwrap()[0] == s {
+								if a.label.clone()[0] == s {
 									a.style.position = a.style.position + normalized;
 								}
 							}
@@ -446,7 +445,8 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 	};
 
 	// Project info render
-	if let Some(t) = egui::Window::new(language[67].clone()).open(&mut temp.project.if_info).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<Back, ShapoError> {
+	let mut if_info_window = temp.project.if_info;
+	if let Some(t) = egui::Window::new(language[67].clone()).open(&mut if_info_window).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<Back, ShapoError> {
 		let mut bpm = temp.project.chart.bpm.clone().to_string();
 		return egui::Grid::new("asashjgauiuiy6381nlzx").show(ui, |ui| -> Result<Back, ShapoError> {
 			ui.label(language[32].clone());
@@ -510,112 +510,25 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 			}
 			ui.end_row();
 
-			ui.label(language[99].clone());
+			ui.label(language[71].clone());
+			let new_judge_field_id = match temp.project.new_judge_field_id.checked_sub(1) {
+				Some(t) => t,
+				None => 0,
+			};
+			ui.add(egui::Slider::new(&mut temp.project.now_judge_field_id, 0..=new_judge_field_id));
 			ui.end_row();
 
-			let id = temp.project.now_judge_field_id;
-			if id < temp.project.chart.judge_field.len() { 
-				let backup = temp.project.chart.judge_field[id].clone();
-				ui.label(language[71].clone());
-				let new_judge_field_id = match temp.project.new_judge_field_id.checked_sub(1) {
-					Some(t) => t,
-					None => 0,
-				};
-				ui.add(egui::Slider::new(&mut temp.project.now_judge_field_id, 0..=new_judge_field_id));
-				ui.end_row();
-
-				ui.label(language[72].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].position.x, 0.0..=100.0).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[73].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].position.y, 0.0..=100.0).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[100].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].size.x, 0.0..=100.0).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[101].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].size.y, 0.0..=100.0).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[77].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].rotate, 0.0..=2.0* PI).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[78].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].rotate_center.x, 0.0..=100.0).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[79].clone());
-				ui.add(egui::Slider::new(&mut temp.project.chart.judge_field[id].rotate_center.y, 0.0..=100.0).step_by(0.0001));
-				ui.end_row();
-
-				ui.label(language[119].clone());
-				let mut start_beat = temp.project.chart.judge_field[id].start_time as f64 / uspb as f64;
-				ui.add(egui::Slider::new(&mut start_beat, 0.0..=2000.0).step_by(0.0001));
-				if start_beat != temp.project.chart.judge_field[id].start_time as f64 / uspb as f64 {
-					temp.project.chart.judge_field[id].start_time = (start_beat * uspb as f64) as u64
-				}
-				ui.end_row();
-
-				ui.label(language[130].clone());
-				let mut end_beat = temp.project.chart.judge_field[id].end_time as f64 / uspb as f64;
-				ui.add(egui::Slider::new(&mut end_beat, 0.0..=2000.0).step_by(0.0001));
-				if end_beat != temp.project.chart.judge_field[id].end_time as f64 / uspb as f64 {
-					temp.project.chart.judge_field[id].end_time = (end_beat * uspb as f64) as u64
-				}
-				ui.end_row();
-
-				ui.label(language[102].clone());
-				egui::ComboBox::from_label(language[102].clone()).selected_text(format!("{}", temp.project.chart.judge_field[id].key.name()))
-					.show_ui(ui, |ui| {
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::A, "A");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::B, "B");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::C, "C");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::D, "D");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::E, "E");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::F, "F");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::G, "G");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::H, "H");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::I, "I");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::J, "J");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::K, "K");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::L, "L");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::M, "M");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::N, "N");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::O, "O");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::P, "P");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::Q, "Q");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::R, "R");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::S, "S");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::T, "T");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::U, "U");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::V, "V");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::W, "W");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::X, "X");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::Y, "Y");
-						ui.selectable_value(&mut temp.project.chart.judge_field[id].key, Key::Z, "Z");
-				    }
-				);
-				ui.end_row();
-
-				if backup != temp.project.chart.judge_field[id] {
-					return Ok(Back::Change(ChangeType::ChartTemp(PossibleChartChange::JudgeField), to_json(&temp.project.chart)?));
-				}
-			}else {
-				ui.label(language[103].clone());
-				ui.end_row();
-			}
-
-			Ok(Back::Nothing)
+			judge_field_texture(ui,&language,&mut temp.project.chart.judge_field, &uspb, &temp.project.now_judge_field_id)
 		}).inner;
 	}) {
 		if let Some(e) = t.inner {
 			vec_back.push(e?);
 		}
 	};
+
+	if if_info_window != temp.project.if_info {
+		temp.project.if_info = if_info_window
+	}
 
 	// Edit Window
 	let mut window_to_close = None;
@@ -631,169 +544,19 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					return Err(ShapoError::SystemError(format!("cant find shape")))
 				}
 				let backup = note[*n].clone();
-				if let Some(t) = egui::Window::new(format!("{} {}", language[53].clone(), note[*n].id)).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<(Back, Note, bool), ShapoError> {
-					let mut back_message = Back::Nothing;
-					let mut new_note = note[*n].clone();
-					let backup = note[*n].clone();
-					let mut delete = false;
-					if let Some(s) = &mut new_note.shape {
-						let mut number = 0;
-						for mut c in &mut *s {
-							if let Some(t) = ui.collapsing(format!("{} {}", language[51].clone(), number), |ui| -> Result<Back, ShapoError> {
-								shape_texture(ui, &mut c, &language, &uspb)
-							}).body_returned {
-								if c.if_delete {
-									delete = true;
-								}
-								if let Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(change)),_) = t? {
-									back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(change))), String::new());
-								};
-							};
-							number = number + 1
-						};
-						let mut shape = Shapo::default();
-						egui::Grid::new("asdyuisdy868689124").show(ui, |ui| {
-							if let Some(t) = ui.menu_button(language[92].clone(), |ui| -> Shapo {
-								let mut shape = Shapo::default();
-								if ui.button(language[54].clone()).clicked() {
-									shape = Shapo{
-										shape: Shape::Circle(Circle::default()),
-										sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
-										label: Some(vec!(temp.project.now_shape_id.to_string())),
-										..Default::default()
-									};
-									back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::Circle)))), String::new());
-									ui.close_menu();
-								};
-								if ui.button(language[55].clone()).clicked() {
-									shape = Shapo{
-										shape: Shape::Rectangle(Rectangle::default()),
-										sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
-										label: Some(vec!(temp.project.now_shape_id.to_string())),
-										..Default::default()
-									};
-									back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::Rectangle)))), String::new());
-									ui.close_menu();
-								};
-								if ui.button(language[57].clone()).clicked() {
-									shape = Shapo{
-										shape: Shape::CubicBezier(CubicBezier::default()),
-										sustain_time: Some((current_beat as u64 * uspb, (current_beat as u64 + 4) * uspb)),
-										label: Some(vec!(temp.project.now_shape_id.to_string())),
-										..Default::default()
-									};
-									back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
-									ui.close_menu();
-								};
-								shape
-							}).inner {
-								shape = t;
-							};
-							ui.end_row();
-
-							ui.label(format!("{}: {}", language[90].clone(), new_note.id));
-							ui.end_row();
-
-							ui.label(language[91].clone());
-							let new_judge_field_id = match temp.project.new_judge_field_id.checked_sub(1) {
-								Some(t) => t,
-								None => 0
-							};
-							ui.add(egui::Slider::new(&mut new_note.judge_field_id, 0..=new_judge_field_id));
-							if backup.judge_field_id != new_note.judge_field_id {
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::JudgeFieldId)), String::new());
-							}
-							ui.end_row();
-
-							ui.label(language[93].clone());
-							ui.add(egui::Slider::new(&mut new_note.start_position.x, 0.0..=100.0).step_by(0.0001));
-							if backup.start_position.x != new_note.start_position.x {
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartPosition)), String::new());
-							}
-							ui.end_row();
-
-							ui.label(language[94].clone());
-							ui.add(egui::Slider::new(&mut new_note.start_position.y, 0.0..=100.0).step_by(0.0001));
-							if backup.start_position.y != new_note.start_position.y {
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartPosition)), String::new());
-							}
-							ui.end_row();
-
-							ui.label(language[95].clone());
-							ui.add(egui::Slider::new(&mut new_note.final_position.x, 0.0..=100.0).step_by(0.0001));
-							if backup.final_position.x != new_note.final_position.x {
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::FinalPosition)), String::new());
-							}
-							ui.end_row();
-
-							ui.label(language[96].clone());
-							ui.add(egui::Slider::new(&mut new_note.final_position.y, 0.0..=100.0).step_by(0.0001));
-							if backup.final_position.y != new_note.final_position.y {
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::FinalPosition)), String::new());
-							}
-							ui.end_row();
-
-							let mut start_time_beat = new_note.start_time as f64 / uspb as f64;
-							let mut end_time_beat = new_note.click_time as f64 / uspb as f64;
-							ui.label(language[119].clone());
-							ui.add(egui::Slider::new(&mut start_time_beat, 0.0..=2000.0).step_by(0.0001));
-							if start_time_beat != new_note.start_time as f64 / uspb as f64 {
-								new_note.start_time = (start_time_beat * uspb as f64) as u64;
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartTime)), String::new());
-							}
-							ui.end_row();
-
-							ui.label(language[130].clone());
-							ui.add(egui::Slider::new(&mut end_time_beat, 0.0..=2000.0).step_by(0.0001));
-							if end_time_beat != new_note.click_time as f64 / uspb as f64 {
-								new_note.click_time = (end_time_beat * uspb as f64) as u64;
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::ClickTime)), String::new());
-							}
-							ui.end_row();
-
-							if ui.button(language[97].clone()).clicked() {
-								if_note_delete = true;
-								new_note.if_delete = true;
-								back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Delete)), String::new());
-							}
-							ui.end_row();
-
-							if ui.button(language[129].clone()).clicked() {
-								window_to_close = Some(id)
-							}
-						});
-						if shape != Shapo::default() {
-							s.push(shape);
-						}
-						ui.end_row();
-						if ui.button(language[157].clone()).clicked() {
-							new_note.shape = None;
-							back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
-						}
-						ui.end_row();
-						if ui.button("Copy").clicked() {
-							new_note.label = Some(vec!("Copy".to_string()));
-							back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
-						}
-						ui.end_row();
-					};
-					Ok((back_message,new_note, delete))
+				if let Some(t) = egui::Window::new(format!("{} {}", language[53].clone(), note[*n].id)).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<(Back, Note), ShapoError> {
+					let (back_message, back_note) = note_texture(ui, &mut note[*n], &language, &uspb, &current_beat,&temp.project.now_shape_id,&temp.project.new_judge_field_id)?;
+					if ui.button(language[129].clone()).clicked() {
+						window_to_close = Some(id)
+					}
+					Ok((back_message, back_note))
 				}) {
 					if let Some(p) = t.inner {
-						let (back_message, e, delete) = p?;
+						let (back_message, e) = p?;
 						let mut back = e;
-						if delete {
-							let mut new_shape = vec!();
-							for a in &back.shape.unwrap() {
-								if !a.if_delete {
-									new_shape.push(a.clone());
-								}
-							}
-							back.shape = Some(new_shape);
-						}
-						if let Some(l) = back.label.clone() {
-							if l == vec!("Copy".to_string()) {
-								back.label = None;
+						if back.label.len() > 0 {
+							if back.label.clone()[0] == vec!("Copy".to_string())[0] {
+								back.label[0] = String::new();
 								note.push(back.clone())
 							}
 						}
@@ -808,12 +571,9 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 			},
 			RenderType::Shape(s) => {
 				for a in &mut temp.project.chart.shape {
-					if a.label.clone().unwrap()[0] == s.clone() {
-						if let Some(t) = egui::Window::new(format!("{} {:?}", language[51].clone(), a.label)).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<Back, ShapoError> {
+					if a.label.clone()[0] == s.clone() {
+						if let Some(t) = egui::Window::new(format!("{} {}", language[51].clone(), a.label.clone()[0])).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<Back, ShapoError> {
 							if let Back::Change(back, u) = shape_texture(ui, a, &language, &uspb)? {
-								if u == String::from("Delete") {
-									if_shape_delete = true;
-								}
 								return Ok(Back::Change(back,u))
 							}
 							if ui.button(language[129].clone()).clicked() {
@@ -838,49 +598,242 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 		temp.project.window.remove(window_to_close.unwrap());
 	}
 
-	if if_shape_delete {
-		let mut new_shape = vec!();
-		for a in &temp.project.chart.shape {
-			if !a.if_delete {
-				new_shape.push(a.clone());
-			}else {
-				let label = RenderLabel::Text(a.label.clone().unwrap()[0].clone());
-				match temp.project.window.get(&label) {
-					Some(_) => {
-						temp.project.window.remove(&label);
-					},
-					None => {}
-				};
-			}
-		}
-		temp.project.chart.shape = new_shape;
-		vec_back.push(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Delete)), to_json(&temp.project.chart)?));
-	} 
-
-	if if_note_delete {
-		let mut new_note_map = BTreeMap::new();
-		for (id, note) in &temp.project.chart.note {
-			let mut new_note = vec!();
-			for b in 0..note.len() {
-				if !note[b].if_delete {
-					new_note.push(note[b].clone());
-				}else {
-					let label = RenderLabel::Array(id.clone(),b);
-					match temp.project.window.get(&label) {
-						Some(_) => {
-							temp.project.window.remove(&label);
-						},
-						None => {}
-					};
-				}
-			}
-			new_note_map.insert(*id, new_note);
-		}
-		temp.project.chart.note = new_note_map;
-		vec_back.push(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Delete)), to_json(&temp.project.chart)?));
-	}
-
 	Ok(vec_back)
+}
+
+fn judge_field_texture(ui: &mut egui::Ui, language: &Vec<String>, judge_field: &mut Vec<JudgeField>, uspb: &u64, id: &usize) -> Result<Back, ShapoError> {
+	egui::Grid::new("asri678453i4bkjdxfvh45k").show(ui, |ui| -> Result<Back, ShapoError> {
+		ui.label(language[99].clone());
+		ui.end_row();
+		// let backup = judge_field[*id].clone();
+
+		ui.label(language[72].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].position.x, 0.0..=100.0).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[73].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].position.y, 0.0..=100.0).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[100].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].size.x, 0.0..=100.0).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[101].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].size.y, 0.0..=100.0).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[77].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].rotate, 0.0..=2.0* PI).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[78].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].rotate_center.x, 0.0..=100.0).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[79].clone());
+		ui.add(egui::Slider::new(&mut judge_field[*id].rotate_center.y, 0.0..=100.0).step_by(0.0001));
+		ui.end_row();
+
+		ui.label(language[119].clone());
+		let mut start_beat = judge_field[*id].start_time as f64 / *uspb as f64;
+		ui.add(egui::Slider::new(&mut start_beat, 0.0..=2000.0).step_by(0.0001));
+		if start_beat != judge_field[*id].start_time as f64 / *uspb as f64 {
+			judge_field[*id].start_time = (start_beat * *uspb as f64) as u64
+		}
+		ui.end_row();
+
+		ui.label(language[130].clone());
+		let mut end_beat = judge_field[*id].end_time as f64 / *uspb as f64;
+		ui.add(egui::Slider::new(&mut end_beat, 0.0..=2000.0).step_by(0.0001));
+		if end_beat != judge_field[*id].end_time as f64 / *uspb as f64 {
+			judge_field[*id].end_time = (end_beat * *uspb as f64) as u64
+		}
+		ui.end_row();
+
+		ui.label(language[102].clone());
+		egui::ComboBox::from_label(language[102].clone()).selected_text(format!("{}", judge_field[*id].key.name()))
+			.show_ui(ui, |ui| {
+				ui.selectable_value(&mut judge_field[*id].key, Key::A, "A");
+				ui.selectable_value(&mut judge_field[*id].key, Key::B, "B");
+				ui.selectable_value(&mut judge_field[*id].key, Key::C, "C");
+				ui.selectable_value(&mut judge_field[*id].key, Key::D, "D");
+				ui.selectable_value(&mut judge_field[*id].key, Key::E, "E");
+				ui.selectable_value(&mut judge_field[*id].key, Key::F, "F");
+				ui.selectable_value(&mut judge_field[*id].key, Key::G, "G");
+				ui.selectable_value(&mut judge_field[*id].key, Key::H, "H");
+				ui.selectable_value(&mut judge_field[*id].key, Key::I, "I");
+				ui.selectable_value(&mut judge_field[*id].key, Key::J, "J");
+				ui.selectable_value(&mut judge_field[*id].key, Key::K, "K");
+				ui.selectable_value(&mut judge_field[*id].key, Key::L, "L");
+				ui.selectable_value(&mut judge_field[*id].key, Key::M, "M");
+				ui.selectable_value(&mut judge_field[*id].key, Key::N, "N");
+				ui.selectable_value(&mut judge_field[*id].key, Key::O, "O");
+				ui.selectable_value(&mut judge_field[*id].key, Key::P, "P");
+				ui.selectable_value(&mut judge_field[*id].key, Key::Q, "Q");
+				ui.selectable_value(&mut judge_field[*id].key, Key::R, "R");
+				ui.selectable_value(&mut judge_field[*id].key, Key::S, "S");
+				ui.selectable_value(&mut judge_field[*id].key, Key::T, "T");
+				ui.selectable_value(&mut judge_field[*id].key, Key::U, "U");
+				ui.selectable_value(&mut judge_field[*id].key, Key::V, "V");
+				ui.selectable_value(&mut judge_field[*id].key, Key::W, "W");
+				ui.selectable_value(&mut judge_field[*id].key, Key::X, "X");
+				ui.selectable_value(&mut judge_field[*id].key, Key::Y, "Y");
+				ui.selectable_value(&mut judge_field[*id].key, Key::Z, "Z");
+			}
+		);
+		ui.end_row();
+
+		// if backup != judge_field[*id] {
+		// 	return Ok(Back::Change(ChangeType::ChartTemp(PossibleChartChange::JudgeField), to_json(&project.chart)?));
+		// }
+
+		Ok(Back::Nothing)
+	}).inner
+}
+
+fn note_texture(ui: &mut egui::Ui, note: &mut Note, language: &Vec<String>, uspb: &u64, current_beat: &f64,now_shape_id: &usize, new_judge_field_id: &usize)  -> Result<(Back, Note), ShapoError> {
+	let mut back_message = Back::Nothing;
+	let mut new_note = note.clone();
+	let backup = note.clone();
+	if let Some(s) = &mut new_note.shape {
+		let mut number = 0;
+		for mut c in &mut *s {
+			if let Some(t) = ui.collapsing(format!("{} {}", language[51].clone(), number), |ui| -> Result<Back, ShapoError> {
+				shape_texture(ui, &mut c, &language, &uspb)
+			}).body_returned {
+				if let Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(change)),_) = t? {
+					back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(change))), String::new());
+				};
+			};
+			number = number + 1
+		};
+		let mut shape = Shapo::default();
+		egui::Grid::new("asdyuisdy868689124").show(ui, |ui| {
+			if let Some(t) = ui.menu_button(language[92].clone(), |ui| -> Shapo {
+				let mut shape = Shapo::default();
+				if ui.button(language[54].clone()).clicked() {
+					shape = Shapo{
+						shape: Shape::Circle(Circle::default()),
+						sustain_time: Some((*current_beat as u64 * uspb, (*current_beat as u64 + 4) * uspb)),
+						label: vec!(now_shape_id.to_string()),
+						..Default::default()
+					};
+					back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::Circle)))), String::new());
+					ui.close_menu();
+				};
+				if ui.button(language[55].clone()).clicked() {
+					shape = Shapo{
+						shape: Shape::Rectangle(Rectangle::default()),
+						sustain_time: Some((*current_beat as u64 * uspb, (*current_beat as u64 + 4) * uspb)),
+						label: vec!(now_shape_id.to_string()),
+						..Default::default()
+					};
+					back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::Rectangle)))), String::new());
+					ui.close_menu();
+				};
+				if ui.button(language[57].clone()).clicked() {
+					shape = Shapo{
+						shape: Shape::CubicBezier(CubicBezier::default()),
+						sustain_time: Some((*current_beat as u64 * uspb, (*current_beat as u64 + 4) * uspb)),
+						label: vec!(now_shape_id.to_string()),
+						..Default::default()
+					};
+					back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
+					ui.close_menu();
+				};
+				shape
+			}).inner {
+				shape = t;
+			};
+			ui.end_row();
+
+			ui.label(format!("{}: {}", language[90].clone(), new_note.id));
+			ui.end_row();
+
+			ui.label(language[91].clone());
+			let max_judge_field_id = match new_judge_field_id.checked_sub(1) {
+				Some(t) => t,
+				None => 0
+			};
+			ui.add(egui::Slider::new(&mut new_note.judge_field_id, 0..=max_judge_field_id));
+			if backup.judge_field_id != new_note.judge_field_id {
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::JudgeFieldId)), String::new());
+			}
+			ui.end_row();
+
+			ui.label(language[93].clone());
+			ui.add(egui::Slider::new(&mut new_note.start_position.x, 0.0..=100.0).step_by(0.0001));
+			if backup.start_position.x != new_note.start_position.x {
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartPosition)), String::new());
+			}
+			ui.end_row();
+
+			ui.label(language[94].clone());
+			ui.add(egui::Slider::new(&mut new_note.start_position.y, 0.0..=100.0).step_by(0.0001));
+			if backup.start_position.y != new_note.start_position.y {
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartPosition)), String::new());
+			}
+			ui.end_row();
+
+			ui.label(language[95].clone());
+			ui.add(egui::Slider::new(&mut new_note.final_position.x, 0.0..=100.0).step_by(0.0001));
+			if backup.final_position.x != new_note.final_position.x {
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::FinalPosition)), String::new());
+			}
+			ui.end_row();
+
+			ui.label(language[96].clone());
+			ui.add(egui::Slider::new(&mut new_note.final_position.y, 0.0..=100.0).step_by(0.0001));
+			if backup.final_position.y != new_note.final_position.y {
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::FinalPosition)), String::new());
+			}
+			ui.end_row();
+
+			let mut start_time_beat = new_note.start_time as f64 / *uspb as f64;
+			let mut end_time_beat = new_note.click_time as f64 / *uspb as f64;
+			ui.label(language[119].clone());
+			ui.add(egui::Slider::new(&mut start_time_beat, 0.0..=2000.0).step_by(0.0001));
+			if start_time_beat != new_note.start_time as f64 / *uspb as f64 {
+				new_note.start_time = (start_time_beat * *uspb as f64) as u64;
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::StartTime)), String::new());
+			}
+			ui.end_row();
+
+			ui.label(language[130].clone());
+			ui.add(egui::Slider::new(&mut end_time_beat, 0.0..=2000.0).step_by(0.0001));
+			if end_time_beat != new_note.click_time as f64 / *uspb as f64 {
+				new_note.click_time = (end_time_beat * *uspb as f64) as u64;
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::ClickTime)), String::new());
+			}
+			ui.end_row();
+
+			if ui.button(language[97].clone()).clicked() {
+				new_note.if_delete = true;
+				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Delete)), String::new());
+			}
+			ui.end_row();
+		});
+		if shape != Shapo::default() {
+			s.push(shape);
+		}
+		ui.end_row();
+		if ui.button(language[157].clone()).clicked() {
+			new_note.shape = None;
+			back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
+		}
+		ui.end_row();
+		if ui.button("Copy").clicked() {
+			if new_note.label.len() > 0 {
+				new_note.label[0] = "Copy".to_string()
+			}else {
+				new_note.label = vec!("Copy".to_string());
+			}
+			back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(PossibleShapoChange::Add(ShapeAdd::CubicBezier)))), String::new());
+		}
+		ui.end_row();
+	};
+	Ok((back_message,new_note))
 }
 
 fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, uspb: &u64) -> Result<Back, ShapoError> {
@@ -1179,10 +1132,10 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 					ui.end_row();
 
 					ui.label(language[119].clone());
-					let mut divided = shape.animation[a].start_time.unwrap() as f64 / *uspb as f64;
+					let mut divided = shape.animation[a].start_time as f64 / *uspb as f64;
 					ui.add(egui::Slider::new(&mut divided , 0.0..=2000.0).step_by(0.0001));
-					if divided != shape.animation[a].start_time.unwrap() as f64 / *uspb as f64 {
-						shape.animation[a].start_time = Some((divided * *uspb as f64) as u64)
+					if divided != shape.animation[a].start_time as f64 / *uspb as f64 {
+						shape.animation[a].start_time = (divided * *uspb as f64) as u64
 					}
 					ui.end_row();
 
@@ -1286,7 +1239,7 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 
 	if ui.button(language[114].clone()).clicked() {
 		shape.animation.push(StyleAnimation{
-			start_time: Some(shape.sustain_time.unwrap().0),
+			start_time: shape.sustain_time.unwrap().0,
 			animate_time: shape.sustain_time.unwrap().1 - shape.sustain_time.unwrap().0,
 			..Default::default()
 		});
@@ -1295,7 +1248,7 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 
 	if ui.button(language[98].clone()).clicked() {
 		shape.if_delete = true;
-		return Ok(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Delete)), String::from("Delete")))
+		return Ok(Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Delete)), String::new()))
 	}
 
 	Ok(back)
@@ -1339,5 +1292,254 @@ fn none_to_zero(input: &Option<u64>) -> u64 {
 	match input {
 		Some(t) => return *t,
 		None => return 0,
+	}
+}
+
+fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &u64, temp: &mut Temp, size: &Vec2, current_beat: &f64) -> Result<Vec<Back>, ShapoError> {
+	let mut vec_back = vec!();
+	let input = ui.input(|input| input.clone());
+	let mut offect = Vec2::new(0.0,0.0);
+	temp.project.timeline_size = input.zoom_delta() * temp.project.timeline_size;
+	let multiple;
+	if input.raw.modifiers.alt == true {
+		multiple = 0.1
+	}else {
+		multiple = 1.0
+	}
+	if input.raw.modifiers.ctrl == true {
+		temp.project.timeline_size = (input.scroll_delta.x / size.x * 3.0) * multiple + temp.project.timeline_size
+	}else if input.raw.modifiers.shift == true {
+		offect = Vec2::new(input.scroll_delta.y * multiple, input.scroll_delta.x * multiple);
+		ui.scroll_with_delta(-offect);
+	}
+	for a in egui::ScrollArea::vertical().show(ui, |ui| -> Result<Vec<Back>, ShapoError> {
+		let mut vec_back = vec!();
+		egui::Grid::new("timeline_edit").show(ui, |ui| -> Result<Vec<Back>, ShapoError> {
+			let mut space = 48.0 * temp.project.timeline_size;
+			let mut count = 0;
+			if temp.project.timeline_size < 1.0 {
+				temp.project.timeline_size = 1.0
+			}
+			loop {
+				if count > 5 {
+					space = 96.0 * 2.0;
+					break;
+				}
+				else if space > 96.0 * 2.0 {
+					space = space / 2.0;
+					count = count + 1
+				}else {
+					break;
+				}
+			}
+
+			let mut rects: Vec<(Rect, f64, f64)> = vec!();
+			let mut x = 0.0;
+
+			let inner = ui.vertical(|ui| -> Result<Vec<Back>, ShapoError> {
+				let mut vec_back = vec!();
+				ui.label(format!("{}",temp.project.chart.songtitle));
+				for (a, b) in &mut temp.project.chart.note {
+					let collapsing =  ui.collapsing(format!("{} {}", language[52].clone(), a), |ui| -> Result<Vec<Back>, ShapoError> {
+						let mut vec_back = vec!();
+						vec_back.push(judge_field_texture(ui, language, &mut temp.project.chart.judge_field, uspb, a)?);
+						for n in 0..b.len() {
+							let collapsing_note = ui.collapsing(format!("{} {}", language[53].clone(), b[n].id), |ui| -> Result<Vec<Back>, ShapoError> {
+								let vec_back = vec!(); 
+								let backup = b[n].clone();
+								let (back_message, e) = note_texture(ui, &mut b[n], &language, &uspb, &current_beat, &temp.project.now_shape_id,&temp.project.new_judge_field_id)?;
+								let back = e;
+								if back.label.clone().len() > 0 {
+									if back.label.clone()[0] == "Copy".to_string() {
+										back.label.clone()[0] = String::new();
+										b.push(back.clone());
+									}
+								}
+								if backup != back {
+									b[n] = back;
+									if let Back::Change(_change, _) = back_message {
+										// vec_back.push(Back::Change(change, to_json(&cloned)?));
+									}
+								}
+
+								Ok(vec_back)
+							});
+
+							rects.push((collapsing_note.header_response.rect, (b[n].click_time as f64 - b[n].start_time as f64) / temp.chart.length as f64, b[n].start_time as f64 / temp.chart.length as f64));
+
+							if let Some(t) = collapsing_note.body_returned {
+								for a in t? {
+									vec_back.push(a);
+								}
+							};
+						}
+
+						Ok(vec_back)
+					});
+					let rect = collapsing.header_response.rect;
+					rects.push((rect, (temp.project.chart.judge_field[*a].end_time as f64 - temp.project.chart.judge_field[*a].start_time as f64) / temp.chart.length as f64, temp.project.chart.judge_field[*a].start_time as f64 / temp.chart.length as f64));
+					if collapsing.body_response.is_some() {
+						x = collapsing.body_response.unwrap().rect.width();
+					}else {
+						x = rect.width();
+					}
+					if let Some(t) = collapsing.body_returned {
+						for a in t? {
+							vec_back.push(a);
+						}
+					};
+				}
+				
+				if let Some(t) = ui.collapsing(language[51].clone(), |ui| -> Result<Vec<Back>, ShapoError> {
+					let mut vec_back = vec!();
+					for s in &mut temp.project.chart.shape {
+						let collapsing_shape = ui.collapsing(format!("{} {}", language[51].clone(), s.label.clone()[0]), |ui| -> Result<Back, ShapoError> {
+							if let Back::Change(back, u) = shape_texture(ui, s, &language, &uspb)? {
+								return Ok(Back::Change(back,u))
+							};
+
+							Ok(Back::Nothing)
+						});
+
+						rects.push((collapsing_shape.header_response.rect, (s.sustain_time.unwrap().1 as f64 - s.sustain_time.unwrap().0 as f64) / temp.chart.length as f64, s.sustain_time.unwrap().0 as f64 / temp.chart.length as f64));
+
+						if let Some(t) = collapsing_shape.body_response {
+							if x < t.rect.width() {
+								x = t.rect.width()
+							}
+						}
+
+						if let Some(t) = collapsing_shape.body_returned {
+							vec_back.push(t?);
+						}
+					}
+					Ok(vec_back)
+				}).body_returned {
+					for a in t? {
+						vec_back.push(a);
+					}
+				}
+
+				ui.add_space(16.0);
+
+				Ok(vec_back)
+			}); 
+
+			for a in inner.inner?{
+				vec_back.push(a)
+			};
+
+			let scroll = egui::ScrollArea::horizontal().min_scrolled_width(size.x - x - 24.0).max_width(size.x - x - 24.0).auto_shrink([false,false]).show(ui, |ui| {
+				ui.scroll_with_delta(offect);
+				for i in 0..(temp.project.chart.length / uspb) * 2u64.pow(count) {
+					let beat_number =  i as f64 / (4.0 * 2u64.pow(count) as f64);
+					let text = format!("{}", beat_number * 4.0);
+					ui.vertical(|ui| {
+						ui.horizontal(|ui| {
+							ui.label(text.clone());
+						});
+						let res = ui.add(VerticalSeparator::default().spacing(space)).on_hover_text(text.clone()).interact(egui::Sense::click());
+
+						if res.clicked() {
+							temp.project.current_time = (beat_number * 4.0 * *uspb as f64) as u64;
+						}
+					});
+				};
+			});
+			let total_length = scroll.content_size.x;
+			let now = scroll.state.offset.x;
+			let timw_offect = 16.0;
+
+			for (mut rect, times, start_times) in rects {
+				rect.min.x =  x + timw_offect - now + start_times as f32 * total_length;
+				rect.set_width(total_length * times as f32);
+
+				if rect.min.x < x + timw_offect {
+					rect.min.x = x + timw_offect
+				} 
+
+				ui.painter().rect_filled(rect, egui::Rounding::same(10.0), Color32::WHITE);
+
+				if rect.width() > size.x - x - 24.0 {
+					rect.set_width(size.x - x - 24.0);
+				}
+
+				if rect.is_positive() {
+					let res = ui.allocate_rect(rect, egui::Sense::click_and_drag());
+
+					if res.clicked() || res.dragged() {
+						let width = rect.width();
+						rect.min.x = rect.min.x + res.drag_delta().x;
+						rect.set_width(width);
+						// println!("{:#?}", res.drag_delta());
+					}	
+				}
+			}
+
+			let time_pointer_x;
+			if temp.project.if_playing {
+				time_pointer_x = x + timw_offect - now + (temp.project.timer.unwrap().read()? as f64 / temp.project.chart.length as f64) as f32 * total_length;
+			}else {
+				time_pointer_x = x + timw_offect - now + (temp.project.current_time as f64 / temp.project.chart.length as f64) as f32 * total_length;
+			}
+
+			if time_pointer_x >= x + timw_offect {
+				ui.painter().vline(time_pointer_x, scroll.inner_rect.min.y..=scroll.inner_rect.max.y, egui::Stroke::new(3.0, Color32::WHITE));
+			}
+
+			Ok(vec_back)
+		}).inner
+	}).inner? {
+		vec_back.push(a)
+	};
+	Ok(vec_back)
+}
+
+pub struct VerticalSeparator {
+	spacing: f32,
+	grow: f32,
+}
+
+impl VerticalSeparator {
+	pub fn spacing(mut self, spacing: f32) -> Self {
+		self.spacing = spacing;
+		self
+	}
+}
+
+impl Default for VerticalSeparator {
+    fn default() -> Self {
+        Self {
+            spacing: 6.0,
+            grow: 0.0,
+        }
+    }
+}
+
+impl egui::Widget for VerticalSeparator {
+	fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+		let VerticalSeparator {
+			spacing,
+			grow,
+		} = self;
+
+
+		let available_space = ui.available_size_before_wrap();
+
+		let size = egui::vec2(spacing, available_space.y);
+
+		let (rect, response) = ui.allocate_at_least(size, Sense::hover());
+
+		if ui.is_rect_visible(response.rect) {
+			let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
+			let painter = ui.painter(); 
+			painter.vline(
+				painter.round_to_pixel(rect.left()),
+				(rect.top() - grow)..=(rect.bottom() + grow),
+				stroke,
+			);
+		}
+
+		response
 	}
 }

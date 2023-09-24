@@ -492,35 +492,28 @@ impl Window {
 				}
 				let mut card_clone = card_read.clone();
 				for b in &mut card_clone.shape {
-					if b.label.is_none() {
-						b.style.position = Vec2 {
-							x: (card_number % 3) as f32 * 24.0 + (card_number % 3 + 1) as f32 * 7.0 + 15.0, 
-							y: ((card_number - card_number % 3)/3) as f32 * 30.0  + 17.0
-						};
-					}else {
-						for c in b.label.clone().unwrap() {
-							if c == "Image".to_string() {
-								let image_path = format!("{}/image.png",&charts[card_number + 9 * (page_number as usize - 1)][ASSETS_PATH.len() + 14..]);
-								if let Shape::Image(t) = &mut b.shape {
-									t.path = image_path
-								}else {
-									unreachable!()
-								}
-								b.style.position = Vec2 {
-									x: (card_number % 3) as f32 * 24.0 + (card_number % 3 + 1) as f32 * 7.0 + 15.0, 
-									y: ((card_number - card_number % 3)/3) as f32 * 30.0  + 17.0
-								};
-							}else if c == "Title".to_string() {
-								let title = format!("{}",&charts[card_number + 9 * (page_number as usize - 1)][ASSETS_PATH.len() + 14..]);
-								if let Shape::Text(t) = &mut b.shape {
-									*t = Text::new_from_string(title);
-								}else {
-									unreachable!()
-								}b.style.position = Vec2 {
-									x: (card_number % 3) as f32 * 24.0 + (card_number % 3 + 1) as f32 * 7.0 + 5.0, 
-									y: ((card_number - card_number % 3)/3) as f32 * 30.0  + 7.0
-								};
+					for c in b.label.clone() {
+						if c == "Image".to_string() {
+							let image_path = format!("{}/image.png",&charts[card_number + 9 * (page_number as usize - 1)][ASSETS_PATH.len() + 14..]);
+							if let Shape::Image(t) = &mut b.shape {
+								t.path = image_path
+							}else {
+								unreachable!()
 							}
+							b.style.position = Vec2 {
+								x: (card_number % 3) as f32 * 24.0 + (card_number % 3 + 1) as f32 * 7.0 + 15.0, 
+								y: ((card_number - card_number % 3)/3) as f32 * 30.0  + 17.0
+							};
+						}else if c == "Title".to_string() {
+							let title = format!("{}",&charts[card_number + 9 * (page_number as usize - 1)][ASSETS_PATH.len() + 14..]);
+							if let Shape::Text(t) = &mut b.shape {
+								*t = Text::new_from_string(title);
+							}else {
+								unreachable!()
+							}b.style.position = Vec2 {
+								x: (card_number % 3) as f32 * 24.0 + (card_number % 3 + 1) as f32 * 7.0 + 5.0, 
+								y: ((card_number - card_number % 3)/3) as f32 * 30.0  + 7.0
+							};
 						}
 					}
 					b.style.volume = Rect{ 

@@ -1,0 +1,33 @@
+WHITESPACE = _{ " " | "	" }
+
+// Basic
+Number     = { (NUMBER | "+" | "-" | "*" | "//" | "/" | "%" | "^" | "(" | ")")+ }
+Toml       = { (LETTER | PUNCTUATION | NUMBER | SYMBOL | NEWLINE)* }
+Vector     = { TypeVector ~ Number ~ (TypeVector ~ Number)* }
+SelectText = { "select" }
+TypeVector = { (Note ~ Number ~ ",") | Shape | JudgeField }
+Type       = { "tap" | "slide" | "rectangle" | "circle" | "bezier_curve" | "image" | "text" | "judge_field" }
+Note       = { "note" }
+Shape      = { "shape" }
+JudgeField = { "judge_field" }
+
+// Commands
+Change   = { "change" ~ (SelectText | Vector)? ~ Toml }
+Repeat   = { ("." | "repeat") ~ Number? ~ Number? }
+Default  = { "default" ~ Type ~ Toml }
+Select   = { "select" ~ Vector }
+Time     = { "time" ~ Number }
+Add      = { "add" ~ Type ~ Toml? }
+Delete   = { "delete" ~ (SelectText | Vector) }
+Undo     = { "undo" ~ Number }
+Redo     = { "redo" ~ Number }
+Play     = { "play" }
+Pause    = { "pause" }
+Save     = { "save" }
+Export   = { "export" }
+Quit     = { "quit" }
+Restore  = { "restore" }
+Import   = { "import" ~ Toml }
+Open     = { "open" ~ Toml }
+Command  = { Change | Repeat | Default | Select | Time | Add | Delete | Undo | Redo | Play | Pause | Save | Export | Quit | Restore | Import | Open }
+Commands = { SOI ~ Command ~ (NEWLINE* ~ Command)* ~ NEWLINE* ~ EOI }

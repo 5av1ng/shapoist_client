@@ -1,3 +1,6 @@
+use std::ops::BitOr;
+use std::ops::Sub;
+use std::ops::Add;
 use std::collections::HashMap;
 use egui::TextureHandle;
 use egui::TextureId;
@@ -19,14 +22,14 @@ use crate::ui::ui::Back;
 use crate::play::timer::Timer;
 use crate::ShapoError;
 
-#[derive(serde::Deserialize, serde::Serialize, Default, Clone, Debug, PartialEq)]
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct Shapo {
 	pub style: Style,
 	pub shape: Shape,
 	pub animation: Vec<StyleAnimation>,
-	pub label: Option<Vec<String>>,
-	pub sustain_time: Option<(u64,u64)>,
+	pub label: Vec<String>,
+	pub sustain_time: Option<(u64,u64)>, // start & end time
 	pub if_delete: bool
 }
 
@@ -43,12 +46,25 @@ pub trait ShapeRender {
 	fn render(&self, ui: &mut egui::Ui, size: &Vec2, offect: Option<Vec2>, style: &Style) -> Result<(), ShapoError>;
 }
 
+impl Default for Shapo {
+	fn default() -> Self {
+		Self {
+			style: Style::default(),
+			shape: Shape::default(),
+			animation: vec!(),
+			label: vec!(),
+			sustain_time: Some((0,0)),
+			if_delete: false,
+		}
+	}
+}
+
 impl Shapo {
 	pub fn default() -> Self {
 		Self {
 			style: Style::default(),
 			shape: Shape::default(),
-			label: None,
+			label: vec!(),
 			animation: Vec::new(),
 			sustain_time: None,
 			if_delete: false
@@ -107,12 +123,7 @@ impl Shapo {
 		for a in &mut self.animation {
 			if a.if_animating {
 				let time_read = timer.read()?;
-				let delay:u64;
-				if let Some(t) = a.start_time {
-					delay = t;
-				}else {
-					delay = 0;
-				}
+				let delay = a.start_time;
 				if time_read < delay {
 					vec_back.push(Back::Nothing);
 				}else {
@@ -236,7 +247,7 @@ impl Shapo {
 		Self {
 			style: Style::new(position, fill, volume, None),
 			shape: Shape::Text(Text::new_from_string(string)),
-			label: None,
+			label: vec!(),
 			animation: Vec::new(),
 			..Default::default()
 		}
@@ -245,7 +256,7 @@ impl Shapo {
 	pub fn from_language(string: Language, position: Vec2, fill: Color32, rect: Rect) -> Self {
 		Self {
 			style: Style::new(position, fill, rect, None),
-			label: None,
+			label: vec!(),
 			shape: Shape::Text(Text::new(string)),
 			animation: Vec::new(),
 			..Default::default()
@@ -256,7 +267,7 @@ impl Shapo {
 		Self {
 			style: Style::new(position, fill, volume, layer),
 			shape: Shape::Rectangle(Rectangle::new(bottom_right_point, rounding)),
-			label: None,
+			label: vec!(),
 			animation: Vec::new(),
 			..Default::default()
 		}
@@ -292,4 +303,215 @@ pub fn rotate(rotate_center: Vec2, vec_to_rotate: Vec2, rotate: f32) -> Vec2 {
 	};
 	delta = middle + rotate_center;
 	delta
+}
+
+// Warning: Add trait for Shapo is not exchangeable
+impl Add for Shapo {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		let sustain_time;
+		if other.sustain_time.is_none() || self.sustain_time.is_none() {
+			sustain_time = self.sustain_time;
+		}else {
+			sustain_time = Some((self.sustain_time.unwrap().0 + other.sustain_time.unwrap().0,self.sustain_time.unwrap().1 + other.sustain_time.unwrap().1))
+		}
+
+		let mut animation = vec!();
+		if other.animation.len() > self.animation.len() {
+			for i in 0..self.animation.len() {
+				animation.push(self.animation[i].clone() + other.animation[i].clone());
+			}
+			for i in self.animation.len()..other.animation.len() {
+				animation.push(other.animation[i].clone())
+			}
+		}else {
+			for i in 0..other.animation.len() {
+				animation.push(self.animation[i].clone() + other.animation[i].clone());
+			}
+			for i in other.animation.len()..self.animation.len() {
+				animation.push(self.animation[i].clone())
+			}
+		}
+
+		Self {
+			style: self.style + other.style,
+			shape: self.shape + other.shape,
+			animation: animation,
+			label: self.label,
+			sustain_time,
+			if_delete: false,
+		}
+	}
+}
+
+impl Sub for Shapo {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		let sustain_time;
+		if other.sustain_time.is_none() || self.sustain_time.is_none() {
+			sustain_time = self.sustain_time;
+		}else {
+			sustain_time = Some((self.sustain_time.unwrap().0 - other.sustain_time.unwrap().0,self.sustain_time.unwrap().1 - other.sustain_time.unwrap().1))
+		}
+
+		let mut animation = vec!();
+		if other.animation.len() > self.animation.len() {
+			for i in 0..self.animation.len() {
+				animation.push(self.animation[i].clone() - other.animation[i].clone());
+			}
+			for i in self.animation.len()..other.animation.len() {
+				animation.push(other.animation[i].clone())
+			}
+		}else {
+			for i in 0..other.animation.len() {
+				animation.push(self.animation[i].clone() - other.animation[i].clone());
+			}
+			for i in other.animation.len()..self.animation.len() {
+				animation.push(self.animation[i].clone())
+			}
+		}
+
+		Self {
+			style: self.style - other.style,
+			shape: self.shape - other.shape,
+			animation: animation,
+			label: self.label,
+			sustain_time,
+			if_delete: false,
+		}
+	}
+}
+
+impl BitOr for Shapo {
+	type Output = Self;
+
+	fn bitor(self, other: Self) -> Self::Output {
+		let Self {
+			mut style,
+			mut shape,
+			mut animation,
+			mut label,
+			mut sustain_time,
+			mut if_delete,
+		} = self;
+
+		if other.style != Self::default().style {
+			style = other.style
+		}
+		if other.shape != Self::default().shape {
+			shape = other.shape
+		}
+		if other.animation != Self::default().animation {
+			animation = other.animation
+		}
+		if other.label != Self::default().label {
+			label = other.label
+		}
+		if other.sustain_time != Self::default().sustain_time {
+			sustain_time = other.sustain_time
+		}
+		if other.if_delete != Self::default().if_delete {
+			if_delete = other.if_delete
+		}
+
+		Self {
+			style,
+			shape,
+			animation,
+			label,
+			sustain_time,
+			if_delete,
+		}
+	}
+}
+
+
+impl Add for Shape {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		match self {
+			Shape::Circle(cir) => {
+				if let Shape::Circle(cir2) = other {
+					return Shape::Circle(cir + cir2)
+				}else {
+					return other
+				}
+			},
+			Shape::Rectangle(rect) => {
+				if let Shape::Rectangle(rect2) = other {
+					return Shape::Rectangle(rect + rect2)
+				}else {
+					return other
+				}
+			},
+			Shape::Text(txt) => {
+				if let Shape::Text(txt2) = other {
+					return Shape::Text(txt + txt2)
+				}else {
+					return other
+				}
+			},
+			Shape::CubicBezier(cb) => {
+				if let Shape::CubicBezier(cb2) = other {
+					return Shape::CubicBezier(cb + cb2)
+				}else {
+					return other
+				}
+			},
+			Shape::Image(img) => {
+				if let Shape::Image(img2) = other {
+					return Shape::Image(img + img2)
+				}else {
+					return other
+				}
+			},
+		}
+	}
+}
+
+impl Sub for Shape {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		match self.clone() {
+			Shape::Circle(cir) => {
+				if let Shape::Circle(cir2) = other {
+					return Shape::Circle(cir - cir2)
+				}else {
+					return self
+				}
+			},
+			Shape::Rectangle(rect) => {
+				if let Shape::Rectangle(rect2) = other {
+					return Shape::Rectangle(rect - rect2)
+				}else {
+					return self
+				}
+			},
+			Shape::Text(txt) => {
+				if let Shape::Text(txt2) = other {
+					return Shape::Text(txt - txt2)
+				}else {
+					return self
+				}
+			},
+			Shape::CubicBezier(cb) => {
+				if let Shape::CubicBezier(cb2) = other {
+					return Shape::CubicBezier(cb - cb2)
+				}else {
+					return self
+				}
+			},
+			Shape::Image(img) => {
+				if let Shape::Image(img2) = other {
+					return Shape::Image(img - img2)
+				}else {
+					return self
+				}
+			},
+		}
+	}
 }

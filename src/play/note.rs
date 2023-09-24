@@ -1,3 +1,8 @@
+use std::ops::BitOr;
+use std::ops::Sub;
+use std::ops::Add;
+use crate::ui::shape::text::Text;
+use crate::ui::shape::image::Image;
 use crate::ui::ui::Component;
 use crate::system::system_function::parse_json;
 use crate::ASSETS_PATH;
@@ -16,7 +21,6 @@ use egui::TextureId;
 use std::collections::HashMap;
 use egui::TextureHandle;
 use crate::ui::shape::bezier_curve::CubicBezier;
-use std::f32::consts::PI;
 use crate::system::system_function::read_file;
 use egui::Rounding;
 use egui::Color32;
@@ -56,7 +60,7 @@ pub struct Note {
 	pub final_position: Vec2,
 	pub judge_type: JudgeType,
 	pub judge: Judge,
-	pub label: Option<Vec<String>>,
+	pub label: Vec<String>,
 	pub if_delete: bool,
 }
 
@@ -88,7 +92,8 @@ pub struct JudgeField {
 	pub start_time: u64,
 	pub rotate_center: Vec2,
 	pub key: Key,
-	pub label: Option<Vec<String>>,
+	pub label: Vec<String>,
+	pub if_delete: bool
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
@@ -110,6 +115,13 @@ pub struct Chart {
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+pub enum PossibleChartSelection {
+	JudgeField(usize),
+	Note(usize, usize),
+	Shape(usize)
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 #[serde(default)]
 pub struct Project {
 	pub chart: Chart,
@@ -124,6 +136,23 @@ pub struct Project {
 	pub window: HashMap<RenderLabel, RenderType>,
 	pub if_playing: bool,
 	pub if_music_play: bool,
+	pub now_select: Option<PossibleChartSelection>,
+	pub multi_select: Vec<PossibleChartSelection>,
+	pub timeline_size: f32,
+	pub default: AllDefault
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[serde(default)]
+pub struct AllDefault {
+	pub circle: Shapo,
+	pub rectangle: Shapo,
+	pub bezier_curve: Shapo,
+	pub text: Shapo,
+	pub image: Shapo,
+	pub tap: Note,
+	pub slide: Note,
+	pub judge_field: JudgeField
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq)]
@@ -210,6 +239,39 @@ pub enum PossibleStyleChange {
 	Layer,
 }
 
+impl Default for AllDefault {
+	fn default() -> Self {
+		Self {
+			circle: Shapo {
+				shape: Shape::Circle(Circle::default()), 
+				..Default::default()
+			},
+			rectangle: Shapo {
+				shape: Shape::Rectangle(Rectangle::default()), 
+				..Default::default()
+			},
+			bezier_curve: Shapo {
+				shape: Shape::CubicBezier(CubicBezier::default()), 
+				..Default::default()
+			},
+			text: Shapo {
+				shape: Shape::Text(Text::default()), 
+				..Default::default()
+			},
+			image: Shapo {
+				shape: Shape::Image(Image::default()), 
+				..Default::default()
+			},
+			tap: Note::default(),
+			slide: Note {
+				judge_type: JudgeType::Slide,
+				..Note::default()
+			},
+			judge_field: JudgeField::default()
+		}
+	}
+}
+
 impl Default for Project {
 	fn default() -> Self {
 		Self {
@@ -225,6 +287,10 @@ impl Default for Project {
 			window: HashMap::new(),
 			if_playing: false,
 			if_music_play: false,
+			multi_select: vec!(),
+			timeline_size: 1.0,
+			default: AllDefault::default(),
+			now_select: None
 		}
 	}
 }
@@ -263,9 +329,9 @@ impl Default for Chart {
 		let space = 5 * 1e5 as u64;
 		for a in 1..=20 {
 			if rand::random() {
-				note_vec.push(Note::new_tap(a as usize - 1, 1, a as u64 * space, (a - 1) as u64 * space, None))
+				note_vec.push(Note::new_tap(a as usize - 1, 1, a as u64 * space, (a - 1) as u64 * space, vec!()))
 			}else {
-				note_vec.push(Note::new_slide(a as usize - 1, 1, a as u64 * space, (a - 1) as u64 * space, None))
+				note_vec.push(Note::new_slide(a as usize - 1, 1, a as u64 * space, (a - 1) as u64 * space, vec!()))
 			}
 		}
 		let mut note = BTreeMap::new();
@@ -302,24 +368,40 @@ impl Chart {
 
 	pub fn length_normallize(&mut self) {
 		let mut max_length = 0;
-		for (_, b) in &self.note {
-			for c in b {
+		for (_,b) in &mut self.note {
+			let mut new_note = vec!();
+			for c in &mut *b {
+				c.check();
 				if c.click_time > max_length {
 					max_length = c.click_time
 				}
-			}
+				if !c.if_delete {
+					new_note.push(c.clone())
+				}
+			};
+			*b = new_note;
 		}
+		let mut new_judge_field = vec!();
 		for a in &self.judge_field {
 			if a.end_time > max_length {
 				max_length = a.end_time
 			}
+			if !a.if_delete {
+				new_judge_field.push(a.clone())
+			}
 		}
+		self.judge_field = new_judge_field;
+		let mut new_shape = vec!();
 		for a in &self.shape{
 			let (_,e) = a.sustain_time.unwrap();
 			if e > max_length {
 				max_length = e
 			}
+			if !a.if_delete {
+				new_shape.push(a.clone())
+			}
 		}
+		self.shape = new_shape;
 		self.length = max_length;
 
 		for (_, b) in &mut self.note {
@@ -331,6 +413,9 @@ impl Chart {
 			}
 		}
 		self.judge_field.sort_by(|a, b| a.end_time.cmp(&b.end_time));
+		for c in 0..self.judge_field.len() {
+			self.judge_field[c].id = c
+		}
 		self.shape.sort_by(|a, b| {
 			let (_,b) = b.sustain_time.unwrap();
 			let (_,a) = a.sustain_time.unwrap();
@@ -402,7 +487,7 @@ impl Chart {
 		let mut timer_vec = vec!(timer.clone());
 		for i in 0..self.shape.len() {
 			self.shape[i].rect_normalize();
-			let label = &self.shape[i].label.clone().unwrap()[0];
+			let label = &self.shape[i].label.clone()[0];
 			if project.window.get(&RenderLabel::Text(label.to_string())).is_some() {
 				for a in &self.shape[i].animation {
 					match &a.style {
@@ -432,15 +517,14 @@ impl Chart {
 			for b in back {
 				vec_back.push(b)
 			}
-			let label = match &self.shape[i].label {
-				Some(t) => t[0].clone(),
-				None => return Err(ShapoError::SystemError(format!("label not found"))),
-			};
-			let vol_rect = self.shape[i].get_rect(size,offect);
-			let (_, response) = ui.allocate_ui_at_rect(vol_rect, |ui| {
-				ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect.max.x - vol_rect.min.x, y: vol_rect.max.y - vol_rect.min.y}, egui::Sense::click_and_drag())).inner
-			}).inner;
-			map.insert(RenderType::Shape(label), response);
+			let label = &self.shape[i].label[0];
+			if self.shape[i].sustain_time.unwrap().0 < time_read && self.shape[i].sustain_time.unwrap().1 > time_read {
+				let vol_rect = self.shape[i].get_rect(size,offect);
+				let (_, response) = ui.allocate_ui_at_rect(vol_rect, |ui| {
+					ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect.max.x - vol_rect.min.x, y: vol_rect.max.y - vol_rect.min.y}, egui::Sense::click_and_drag())).inner
+				}).inner;
+				map.insert(RenderType::Shape(label.to_string()), response);
+			}
 		}
 		for (id, a) in &mut self.note {
 			for c in 0..a.len() {
@@ -484,14 +568,16 @@ impl Chart {
 					}
 				}
 				let position = a[c].final_position / 100.0 * *size;
-				let vol_rect = Rect{
-					min: (position - Vec2{x: 30.0, y: 30.0}).to_pos2(),
-					max: (position + Vec2{x: 30.0, y: 30.0}).to_pos2()
-				};
-				let (_, response) = ui.allocate_ui_at_rect(vol_rect, |ui| {
-					ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect.max.x - vol_rect.min.x + offect_vec.x, y: vol_rect.max.y - vol_rect.min.y + offect_vec.y}, egui::Sense::click_and_drag())).inner
-				}).inner;
-				map.insert(RenderType::Note(*id, c), response);
+				if a[c].click_time > time_read && a[c].start_time < time_read {
+					let vol_rect = Rect{
+						min: (position - Vec2{x: 30.0, y: 30.0}).to_pos2(),
+						max: (position + Vec2{x: 30.0, y: 30.0}).to_pos2()
+					};
+					let (_, response) = ui.allocate_ui_at_rect(vol_rect, |ui| {
+						ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect.max.x - vol_rect.min.x + offect_vec.x, y: vol_rect.max.y - vol_rect.min.y + offect_vec.y}, egui::Sense::click_and_drag())).inner
+					}).inner;
+					map.insert(RenderType::Note(*id, c), response);
+				}
 			}
 		}
 		for a in &mut self.judge_field {
@@ -648,10 +734,7 @@ impl Chart {
 				if let Back::AnimateDone(_) = b {
 					let mut max_time = 0;
 					for c in &self.shape[i].animation {
-						let delay = match c.start_time {
-							Some(t) => t,
-							None => 0
-						};
+						let delay = c.start_time;
 						if max_time <= delay + c.animate_time {
 							max_time = delay + c.animate_time
 						}
@@ -712,6 +795,18 @@ impl Chart {
 }
 
 impl Note {
+	fn check(&mut self) {
+		let mut new_shape = vec!();
+		if self.shape.is_some() {
+			for a in self.shape.clone().unwrap() {
+				if !a.if_delete {
+					new_shape.push(a);
+				}
+			}
+			self.shape = Some(new_shape);
+		}
+	}
+
 	fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, timer: &mut Vec<Timer>, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>) -> Result<Vec<Back>, ShapoError>  {
 		let mut vec_back = Vec::new();
 		let time_read = timer[0].read()?;
@@ -760,10 +855,10 @@ impl Note {
 							a.animation[0].end_value = length;
 						}
 						if let None = self.click_time.checked_sub((length/setting.drop_velocity) as u64){
-							a.animation[0].start_time = Some(0);
+							a.animation[0].start_time = 0;
 							a.animation[0].animate_time = (length /setting.drop_velocity) as u64 - self.click_time;
 						}else {
-							a.animation[0].start_time = Some(self.click_time - (length/setting.drop_velocity) as u64);
+							a.animation[0].start_time = self.click_time - (length/setting.drop_velocity) as u64;
 							a.animation[0].animate_time = (length /setting.drop_velocity) as u64;
 						}
 					}
@@ -810,20 +905,163 @@ impl Note {
 impl Default for JudgeField {
 	fn default() -> Self {
 		Self {
-			size: Vec2 { x: 60.0, y: 60.0 },
-			position: Vec2 { x: 20.0, y: 20.0 },
+			size: Vec2 { x: 0.0, y: 0.0 },
+			position: Vec2 { x: 0.0, y: 0.0 },
 			id: 1,
 			animation: vec!(),
-			rotate: PI / 4.0,
-			rotate_center: Vec2{ x: 50.0, y: 50.0 },
+			rotate: 0.0,
+			rotate_center: Vec2{ x: 0.0, y: 0.0 },
 			key: Key::A,
 			start_time: 0,
-			end_time: 1e10 as u64,
-			label: None
+			end_time: 0,
+			label: vec!(),
+			if_delete: false,
 		}
 	}
 }
 
+impl Add for JudgeField {
+	type Output = Self;
+
+	fn add(self, other: Self) -> Self::Output {
+		let mut animation = vec!();
+		if other.animation.len() > self.animation.len() {
+			for i in 0..self.animation.len() {
+				animation.push(self.animation[i].clone() + other.animation[i].clone());
+			}
+			for i in self.animation.len()..other.animation.len() {
+				animation.push(other.animation[i].clone())
+			}
+		}else {
+			for i in 0..other.animation.len() {
+				animation.push(self.animation[i].clone() + other.animation[i].clone());
+			}
+			for i in other.animation.len()..self.animation.len() {
+				animation.push(self.animation[i].clone())
+			}
+		}
+
+		Self {
+			size: self.size + other.size,
+			position: self.position + other.position,
+			id: self.id,
+			animation,
+			rotate: self.rotate + other.rotate,
+			rotate_center: self.rotate_center + other.rotate_center,
+			key: self.key,
+			start_time: self.start_time + other.start_time,
+			end_time: self.end_time + other.end_time,
+			label: self.label,
+			if_delete: false,
+		}
+	}
+}
+
+impl Sub for JudgeField {
+	type Output = Self;
+
+	fn sub(self, other: Self) -> Self::Output {
+		let mut animation = vec!();
+		if other.animation.len() > self.animation.len() {
+			for i in 0..self.animation.len() {
+				animation.push(self.animation[i].clone() - other.animation[i].clone());
+			}
+			for i in self.animation.len()..other.animation.len() {
+				animation.push(other.animation[i].clone())
+			}
+		}else {
+			for i in 0..other.animation.len() {
+				animation.push(self.animation[i].clone() - other.animation[i].clone());
+			}
+			for i in other.animation.len()..self.animation.len() {
+				animation.push(self.animation[i].clone())
+			}
+		}
+
+		Self {
+			size: self.size - other.size,
+			position: self.position - other.position,
+			id: self.id,
+			animation,
+			rotate: self.rotate - other.rotate,
+			rotate_center: self.rotate_center - other.rotate_center,
+			key: self.key,
+			start_time: self.start_time - other.start_time,
+			end_time: self.end_time - other.end_time,
+			label: self.label,
+			if_delete: false,
+		}
+	}
+}
+
+impl BitOr for JudgeField {
+	type Output = Self;
+
+	fn bitor(self, other: Self) -> Self::Output {
+		let Self {
+			mut size,
+			mut position,
+			mut id,
+			mut animation,
+			mut rotate,
+			mut rotate_center,
+			mut key,
+			mut start_time,
+			mut end_time,
+			mut label, 
+			mut if_delete } = self;
+
+		if other.size != Self::default().size {
+			size = other.size
+		}
+		if other.position != Self::default().position {
+			position = other.position
+		}
+		if other.id != Self::default().id {
+			id = other.id
+		}
+		if other.animation != Self::default().animation {
+			animation = other.animation
+		}
+		if other.rotate != Self::default().rotate {
+			rotate = other.rotate
+		}
+		if other.rotate_center != Self::default().rotate_center {
+			rotate_center = other.rotate_center
+		}
+		if other.key != Self::default().key {
+			key = other.key
+		}
+		if other.start_time != Self::default().start_time {
+			start_time = other.start_time
+		}
+		if other.end_time != Self::default().end_time {
+			end_time = other.end_time
+		}
+		if other.label != Self::default().label {
+			label = other.label
+		}
+		if other.if_delete != Self::default().if_delete {
+			if_delete = other.if_delete
+		}
+
+		Self {
+			size,
+			position,
+			id,
+			animation,
+			rotate,
+			rotate_center,
+			key,
+			start_time,
+			end_time,
+			label,
+			if_delete,
+		}
+	}
+}
+
+/// Warning: Add trait for JudgeField is not exchangeable
 impl JudgeField {
 	fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, timer: &mut Vec<Timer>, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>) -> Result<(), ShapoError> {
 		let time_read = timer[0].read()?;
@@ -909,18 +1147,18 @@ impl Default for Note {
 			clicked_time: None,
 			click_time: 0,
 			start_time: 0,
-			start_position: Vec2 {x: 50.0 , y: 0.0 },
-			final_position: Vec2 {x: 50.0 , y: 80.0},
+			start_position: Vec2 {x: 0.0 , y: 0.0 },
+			final_position: Vec2 {x: 0.0 , y: 0.0},
 			judge_type: JudgeType::Tap,
 			judge: Judge::None,
-			label: None,
+			label: vec!(),
 			if_delete: false
 		}
 	}
 }
 
 impl Note {
-	fn new_tap(id: usize, judge_field_id: usize ,click_time: u64, start_time: u64, label: Option<Vec<String>>) -> Self {
+	fn new_tap(id: usize, judge_field_id: usize ,click_time: u64, start_time: u64, label: Vec<String>) -> Self {
 		Self {
 			id,
 			judge_field_id,
@@ -937,7 +1175,7 @@ impl Note {
 		}
 	}
 
-	fn new_slide(id: usize,judge_field_id: usize , click_time: u64, start_time: u64, label: Option<Vec<String>>) -> Self {
+	fn new_slide(id: usize,judge_field_id: usize , click_time: u64, start_time: u64, label: Vec<String>) -> Self {
 		Self {
 			id,
 			judge_field_id,
@@ -951,6 +1189,192 @@ impl Note {
 			judge: Judge::None,
 			label,
 			if_delete: false
+		}
+	}
+}
+
+/// Warning: Add trait for Note is not exchangeable
+impl Add for Note {
+
+	type Output = Self;
+
+	fn add(self, other: Note) -> Self::Output { 
+		let shape;
+
+		if other.shape.is_none() || self.shape.is_none() {
+			shape = self.shape;
+		}else {
+			let shorter_is_self;
+
+			if self.shape.clone().unwrap().len() >= other.shape.clone().unwrap().len() {
+				shorter_is_self = false;
+			}else {
+				shorter_is_self = true;
+			}
+			if shorter_is_self {
+				let mut out_shape = vec!();
+				for a in other.shape.unwrap() {
+					let mut c = a.clone();
+					for b in self.shape.clone().unwrap() {
+						if b.label.clone()[0] == a.label.clone()[0] {
+							c = b + a.clone();
+						}
+					}
+					out_shape.push(c);
+				}
+				shape = Some(out_shape);
+			}else {
+				let mut out_shape = vec!();
+				for a in self.shape.unwrap() {
+					let mut c = a.clone();
+					for b in other.shape.clone().unwrap() {
+						if b.label.clone()[0] == a.label.clone()[0] {
+							c = a.clone() + b;
+						}
+					}
+					out_shape.push(c);
+				}
+				shape = Some(out_shape);
+			}
+		}
+
+		Self {
+			id: self.id,
+			judge_field_id: self.id,
+			shape,
+			clicked_time: self.clicked_time,
+			click_time: self.click_time + other.click_time,
+			start_time: self.start_time + other.start_time,
+			start_position: self.start_position + other.start_position,
+			final_position: self.final_position + other.final_position,
+			judge_type: self.judge_type,
+			judge: Judge::None,
+			label: self.label,
+			if_delete: other.if_delete,
+		}
+	}
+}
+
+impl Sub for Note {
+
+	type Output = Self;
+
+	fn sub(self, other: Note) -> Self::Output { 
+		let shape;
+
+		if other.shape.is_none() || self.shape.is_none() {
+			shape = self.shape;
+		}else {
+			let shorter_is_self;
+
+			if self.shape.clone().unwrap().len() >= other.shape.clone().unwrap().len() {
+				shorter_is_self = false;
+			}else {
+				shorter_is_self = true;
+			}
+			if shorter_is_self {
+				let mut out_shape = vec!();
+				for a in other.shape.unwrap() {
+					let mut c = a.clone();
+					for b in self.shape.clone().unwrap() {
+						if b.label.clone()[0] == a.label.clone()[0] {
+							c = b - a.clone();
+						}
+					}
+					out_shape.push(c);
+				}
+				shape = Some(out_shape);
+			}else {
+				let mut out_shape = vec!();
+				for a in self.shape.unwrap() {
+					let mut c = a.clone();
+					for b in other.shape.clone().unwrap() {
+						if b.label.clone()[0] == a.label.clone()[0] {
+							c = a.clone() - b;
+						}
+					}
+					out_shape.push(c);
+				}
+				shape = Some(out_shape);
+			}
+		}
+
+		Self {
+			id: self.id,
+			judge_field_id: self.id,
+			shape,
+			clicked_time: self.clicked_time,
+			click_time: self.click_time - other.click_time,
+			start_time: self.start_time - other.start_time,
+			start_position: self.start_position - other.start_position,
+			final_position: self.final_position - other.final_position,
+			judge_type: self.judge_type,
+			judge: Judge::None,
+			label: self.label,
+			if_delete: self.if_delete,
+		}
+	}
+}
+
+impl BitOr for Note {
+
+	type Output = Self;
+
+	fn bitor(self, other: Note) -> Self::Output { 
+		let Self { mut id, mut judge_field_id, mut shape, mut clicked_time, mut click_time,
+			mut start_time, mut start_position, mut final_position, mut judge_type,
+			mut judge, mut label, mut if_delete } = self;
+
+		if other.id != Note::default().id {
+			id = other.id
+		}
+		if other.judge_field_id != Note::default().judge_field_id {
+			judge_field_id = other.judge_field_id
+		}
+		if other.shape != Note::default().shape {
+			shape = other.shape
+		}
+		if other.click_time != Note::default().click_time {
+			click_time = other.click_time
+		}
+		if other.clicked_time != Note::default().clicked_time {
+			clicked_time = other.clicked_time
+		}
+		if other.start_time != Note::default().start_time {
+			start_time = other.start_time
+		}
+		if other.start_position != Note::default().start_position {
+			start_position = other.start_position
+		}
+		if other.final_position != Note::default().final_position {
+			final_position = other.final_position
+		}
+		if other.judge_type != Note::default().judge_type {
+			judge_type = other.judge_type
+		}
+		if other.judge != Note::default().judge {
+			judge = other.judge
+		}
+		if other.label != Note::default().label {
+			label = other.label
+		}
+		if other.if_delete != Note::default().if_delete {
+			if_delete = other.if_delete
+		}
+
+		Self {
+			id,
+			judge_field_id,
+			shape,
+			clicked_time,
+			click_time,
+			start_time,
+			start_position,
+			final_position,
+			judge_type,
+			judge,
+			label,
+			if_delete,
 		}
 	}
 }
