@@ -53,9 +53,9 @@ pub struct Note {
 	pub id: usize,
 	pub judge_field_id: usize,
 	pub shape: Option<Vec<Shapo>>,
-	pub clicked_time: Option<u64>,
-	pub click_time: u64,
-	pub start_time: u64,
+	pub clicked_time: Option<i64>,
+	pub click_time: i64,
+	pub start_time: i64,
 	pub start_position: Vec2,
 	pub final_position: Vec2,
 	pub judge_type: JudgeType,
@@ -88,8 +88,8 @@ pub struct JudgeField {
 	pub id: usize,
 	pub animation: Vec<StyleAnimation>,
 	pub rotate: f32,
-	pub end_time: u64,
-	pub start_time: u64,
+	pub end_time: i64,
+	pub start_time: i64,
 	pub rotate_center: Vec2,
 	pub key: Key,
 	pub label: Vec<String>,
@@ -109,9 +109,9 @@ pub struct Chart {
 	pub now_judge: BTreeMap<usize,usize>,//第一个同上，第二个是该判定范围下已经判定到的note
 	pub judge_field: Vec<JudgeField>,
 	pub shape: Vec<Shapo>,
-	pub length: u64,
+	pub length: i64,
 	pub if_playing: bool,
-	pub offect: u64
+	pub offect: i64
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
@@ -131,7 +131,7 @@ pub struct Project {
 	pub now_judge_field_id: usize,
 	pub now_note_id: usize,
 	pub now_shape_id: usize,
-	pub current_time: u64,
+	pub current_time: i64,
 	pub if_info: bool,
 	pub window: HashMap<RenderLabel, RenderType>,
 	pub if_playing: bool,
@@ -139,7 +139,8 @@ pub struct Project {
 	pub now_select: Option<PossibleChartSelection>,
 	pub multi_select: Vec<PossibleChartSelection>,
 	pub timeline_size: f32,
-	pub default: AllDefault
+	pub default: AllDefault,
+	pub adsorption: f32, // zero for none, 1.0 for 1 beat,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
@@ -290,7 +291,8 @@ impl Default for Project {
 			multi_select: vec!(),
 			timeline_size: 1.0,
 			default: AllDefault::default(),
-			now_select: None
+			now_select: None,
+			adsorption: 0.5,
 		}
 	}
 }
@@ -317,7 +319,7 @@ impl Project {
 	pub fn render(&mut self, ui: &mut egui::Ui, size: Vec2, if_enabled: bool,texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>) -> Result<(Vec<Back>, HashMap<RenderType, Response>),ShapoError> {
 		self.timer()?;
 		let mut timer = self.timer.unwrap();
-		timer.set(3 * 1e6 as u64)?;
+		timer.set(3 * 1e6 as i64)?;
 		self.chart.length_normallize();
 		self.chart.project_render(ui, &size, &mut timer, if_enabled,texture, offect,&self.clone())
 	}
@@ -326,12 +328,12 @@ impl Project {
 impl Default for Chart {
 	fn default() -> Self {
 		let mut note_vec = Vec::new();
-		let space = 5 * 1e5 as u64;
+		let space = 5 * 1e5 as i64;
 		for a in 1..=20 {
 			if rand::random() {
-				note_vec.push(Note::new_tap(a as usize - 1, 1, a as u64 * space, (a - 1) as u64 * space, vec!()))
+				note_vec.push(Note::new_tap(a as usize - 1, 1, a as i64 * space, (a - 1) as i64 * space, vec!()))
 			}else {
-				note_vec.push(Note::new_slide(a as usize - 1, 1, a as u64 * space, (a - 1) as u64 * space, vec!()))
+				note_vec.push(Note::new_slide(a as usize - 1, 1, a as i64 * space, (a - 1) as i64 * space, vec!()))
 			}
 		}
 		let mut note = BTreeMap::new();
@@ -347,7 +349,7 @@ impl Default for Chart {
 			charter: String::new(),
 			note,
 			now_judge,
-			length: 1e7 as u64,
+			length: 1e7 as i64,
 			judge_field: vec!(JudgeField::default()),
 			shape: vec!(),
 			if_playing: false,
@@ -421,6 +423,11 @@ impl Chart {
 			let (_,a) = a.sustain_time.unwrap();
 			a.cmp(&b)
 		});
+		if self.shape.len() > 0 {
+			for c in 0..self.shape.len() {
+				self.shape[c].label[0] = c.to_string();
+			}
+		}
 	}
 
 	pub fn change(&mut self, change: &PossibleChartChange, json: &String) -> Result<Self, ShapoError> {
@@ -456,14 +463,14 @@ impl Chart {
 	}
 
 	pub fn project_render(&mut self, ui: &mut egui::Ui, size: &Vec2, input_timer: &mut Timer, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>, project: &Project) -> Result<(Vec<Back>, HashMap<RenderType, Response>), ShapoError> {
-		let time_read = match input_timer.read()?.checked_sub(3 * 1e6 as u64){
+		let time_read = match input_timer.read()?.checked_sub(3 * 1e6 as i64){
 			Some(t) => t,
 			None => return Ok((vec!(Back::Nothing), HashMap::new()))
 		};
 		let mut map = HashMap::new();
 		let mut timer = Timer::new(1);
 		let setting = read_settings()?;
-		let time_read = match time_read.checked_sub((setting.offect * 1e3) as u64) {
+		let time_read = match time_read.checked_sub((setting.offect * 1e3) as i64) {
 			Some(t) => t,
 			None => 0,
 		};
@@ -477,9 +484,9 @@ impl Chart {
 		};
 		timer.start()?;
 		timer.set(time_read)?;
-		let uspb = (60.0 * 1e6 / project.chart.bpm) as u64;
+		let uspb = (60.0 * 1e6 / project.chart.bpm) as i64;
 		ui.label(format!("{} {:.3}",Language::Code(133).get_language()?, timer.read()? as f64 / 1e6));
-		ui.label(format!("{} {:.3}",Language::Code(160).get_language()?, (timer.read()? + self.offect + (setting.offect * 1e3) as u64) as f64 / uspb as f64));
+		ui.label(format!("{} {:.3}",Language::Code(160).get_language()?, (timer.read()? + self.offect + (setting.offect * 1e3) as i64) as f64 / uspb as f64));
 		let mut vec_back = Vec::new();
 		if !project.if_music_play && project.if_playing {
 			vec_back.push(Back::MusicPlay(format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH , self.mapname), self.bpm,0.0, (-(project.current_time as f32) + self.offect as f32) as f32 / 1e6));
@@ -587,12 +594,12 @@ impl Chart {
 	}
 
 	pub fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, input_timer: &mut Timer, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>, touch: &mut HashMap<u64, Touch>) -> Result<Vec<Back>, ShapoError> {
-		let time_read = match input_timer.read()?.checked_sub(3 * 1e6 as u64) {
+		let time_read = match input_timer.read()?.checked_sub(3 * 1e6 as i64) {
 			Some(t) => t,
 			None => return Ok(vec!(Back::Nothing))
 		};
 		let setting = read_settings()?;
-		let time_read = match time_read.checked_sub((setting.offect * 1e3) as u64) {
+		let time_read = match time_read.checked_sub((setting.offect * 1e3) as i64) {
 			Some(t) => t,
 			None => 0,
 		};
@@ -600,7 +607,7 @@ impl Chart {
 			Some(t) => t,
 			None => 0,
 		};
-		if time_read > self.length + 1e6 as u64 {
+		if time_read > self.length + 1e6 as i64 {
 			return Ok(vec!(Back::Router(Router::EndPage(PlayTop::default()))));
 		}
 		let mut timer = Timer::new(1);
@@ -770,7 +777,7 @@ impl Chart {
 				if self.now_judge.get(id).unwrap() + setting.search_depth < c {
 					break;
 				}
-				if a[c].click_time + (FADE_TIME as u64) < time_read {
+				if a[c].click_time + (FADE_TIME as i64) < time_read {
 					if let Judge::None = a[c].judge {
 						a[c].judge = Judge::Miss;
 						judged_note.push((*id,a[c].id));
@@ -810,7 +817,7 @@ impl Note {
 	fn render(&mut self, ui: &mut egui::Ui, size: &Vec2, timer: &mut Vec<Timer>, if_paused: bool, texture: &HashMap<TextureId,TextureHandle>, offect: Option<Vec2>) -> Result<Vec<Back>, ShapoError>  {
 		let mut vec_back = Vec::new();
 		let time_read = timer[0].read()?;
-		if self.click_time + FADE_TIME as u64 > time_read && self.judge == Judge::None {
+		if self.click_time + FADE_TIME as i64 > time_read && self.judge == Judge::None {
 			let setting = read_settings()?;
 			if let Some(t) = &mut self.shape {
 				for a in t {
@@ -844,7 +851,7 @@ impl Note {
 				note_read = parse_toml(&note_json)?;
 				if let Component::Shapo(mut nr) = note_read {
 					for a in &mut nr {
-						a.sustain_time = Some((self.start_time,self.click_time + FADE_TIME as u64));
+						a.sustain_time = Some((self.start_time,self.click_time + FADE_TIME as i64));
 						let offect = a.style.position;
 						a.style.position = Vec2 { x: -100.0, y: -100.0 };
 						if let StyleAnimate::Position(t) = &mut a.animation[0].style {
@@ -854,12 +861,12 @@ impl Note {
 							t.points[3] = (self.final_position + offect).to_pos2();
 							a.animation[0].end_value = length;
 						}
-						if let None = self.click_time.checked_sub((length/setting.drop_velocity) as u64){
+						if let None = self.click_time.checked_sub((length/setting.drop_velocity) as i64){
 							a.animation[0].start_time = 0;
-							a.animation[0].animate_time = (length /setting.drop_velocity) as u64 - self.click_time;
+							a.animation[0].animate_time = (length /setting.drop_velocity) as i64 - self.click_time;
 						}else {
-							a.animation[0].start_time = self.click_time - (length/setting.drop_velocity) as u64;
-							a.animation[0].animate_time = (length /setting.drop_velocity) as u64;
+							a.animation[0].start_time = self.click_time - (length/setting.drop_velocity) as i64;
+							a.animation[0].animate_time = (length /setting.drop_velocity) as i64;
 						}
 					}
 					self.shape = Some(nr);
@@ -1158,7 +1165,7 @@ impl Default for Note {
 }
 
 impl Note {
-	fn new_tap(id: usize, judge_field_id: usize ,click_time: u64, start_time: u64, label: Vec<String>) -> Self {
+	fn new_tap(id: usize, judge_field_id: usize ,click_time: i64, start_time: i64, label: Vec<String>) -> Self {
 		Self {
 			id,
 			judge_field_id,
@@ -1175,7 +1182,7 @@ impl Note {
 		}
 	}
 
-	fn new_slide(id: usize,judge_field_id: usize , click_time: u64, start_time: u64, label: Vec<String>) -> Self {
+	fn new_slide(id: usize,judge_field_id: usize , click_time: i64, start_time: i64, label: Vec<String>) -> Self {
 		Self {
 			id,
 			judge_field_id,
@@ -1339,10 +1346,10 @@ impl BitOr for Note {
 			shape = other.shape
 		}
 		if other.click_time != Note::default().click_time {
-			click_time = other.click_time
+			click_time = other.click_time;
 		}
 		if other.clicked_time != Note::default().clicked_time {
-			clicked_time = other.clicked_time
+			clicked_time = other.clicked_time;
 		}
 		if other.start_time != Note::default().start_time {
 			start_time = other.start_time

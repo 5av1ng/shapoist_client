@@ -9,7 +9,7 @@ use crate::system::system_function::copy_file;
 use crate::system::system_function::create_dir;
 use crate::play::note::Project;
 use crate::play::note::PossibleChartChange;
-use crate::setting::setting::read_settings;
+// use crate::setting::setting::read_settings;
 use crate::system::system_function::parse_json;
 use crate::play::note::Chart;
 use egui::DroppedFile;
@@ -331,12 +331,12 @@ impl Page {
 			Back::Play => {
 				if let Some(t) = &mut self.display.play_top {
 					t.play()?;
-					if !(t.current_time.checked_sub(3 * 1e6 as u64)).is_some() {
+					if !(t.current_time.checked_sub(3 * 1e6 as i64)).is_some() {
 						t.chart.if_playing = false;
 					}
 				}
 				if let Some(t) = &self.display.play_top {
-					if (t.current_time.checked_sub(3 * 1e6 as u64)).is_some() {
+					if (t.current_time.checked_sub(3 * 1e6 as i64)).is_some() {
 						self.play_music(format!("{}/assets/chart/{}/song.mp3",*ASSETS_PATH , t.chart.mapname), t.chart.bpm, 0.0, (t.chart.offect as f32 - t.current_time as f32 + 3.0 * 1e6) as f32 / 1e6)?;
 					}
 				}
@@ -366,37 +366,37 @@ impl Page {
 						create_file(&format!("{}/assets/setting.toml", *ASSETS_PATH))?;
 						write_file(&format!("{}/assets/setting.toml", *ASSETS_PATH),json)?;
 					},
-					ChangeType::ChartTemp(t) => {
-						let setting = read_settings()?;
-						if self.temp.undo_times != 0{
-							let mut new_chart_undo = vec!();
-							for a in 1..self.temp.chart_undo.len() - self.temp.undo_times {
-								new_chart_undo.push(self.temp.chart_undo[a].clone())
-							}
-							self.temp.chart_undo = new_chart_undo;
-						}
-						if self.temp.chart_undo.len() >= setting.undo_steps {
-							let mut new_chart_undo = vec!();
-							for a in 1..self.temp.chart_undo.len() {
-								new_chart_undo.push(self.temp.chart_undo[a].clone())
-							}
-							self.temp.chart_undo = new_chart_undo;
-						}
-						let length = self.temp.chart_undo.len();
-						if length < 1 {
-							self.temp.chart_undo.push((t.clone(),self.temp.chart.clone()));
-						}else {
-							let (change_type,_) = &self.temp.chart_undo[length - 1];
-							if change_type == &t.clone() {
-								self.temp.chart_undo[length - 1] = (t.clone(),self.temp.chart.clone());
-							}else {
-								self.temp.chart_undo.push((t.clone(),self.temp.chart.clone()));
-							}
-						}
-						self.temp.chart = parse_json(&json)?;
-						self.temp.chart.length_normallize();
-						self.temp.undo_times = 0;
-						self.temp.project.chart = self.temp.chart.clone();
+					ChangeType::ChartTemp(_t) => {
+						// let setting = read_settings()?;
+						// if self.temp.undo_times != 0{
+						// 	let mut new_chart_undo = vec!();
+						// 	for a in 1..self.temp.chart_undo.len() - self.temp.undo_times {
+						// 		new_chart_undo.push(self.temp.chart_undo[a].clone())
+						// 	}
+						// 	self.temp.chart_undo = new_chart_undo;
+						// }
+						// if self.temp.chart_undo.len() >= setting.undo_steps {
+						// 	let mut new_chart_undo = vec!();
+						// 	for a in 1..self.temp.chart_undo.len() {
+						// 		new_chart_undo.push(self.temp.chart_undo[a].clone())
+						// 	}
+						// 	self.temp.chart_undo = new_chart_undo;
+						// }
+						// let length = self.temp.chart_undo.len();
+						// if length < 1 {
+						// 	self.temp.chart_undo.push((t.clone(),self.temp.chart.clone()));
+						// }else {
+						// 	let (change_type,_) = &self.temp.chart_undo[length - 1];
+						// 	if change_type == &t.clone() {
+						// 		self.temp.chart_undo[length - 1] = (t.clone(),self.temp.chart.clone());
+						// 	}else {
+						// 		self.temp.chart_undo.push((t.clone(),self.temp.chart.clone()));
+						// 	}
+						// }
+						// self.temp.chart = parse_json(&json)?;
+						// self.temp.chart.length_normallize();
+						// self.temp.undo_times = 0;
+						// self.temp.project.chart = self.temp.chart.clone();
 					},
 					ChangeType::MuiscPath => {
 						self.temp.music_path = parse_json(&json)?;
@@ -449,6 +449,7 @@ impl Page {
 			},
 			Back::OpenProject => {
 				if self.temp.now_project_path.is_empty() {
+					println!("{}", self.temp.now_project_path);
 					return Err(ShapoError::SystemError(format!("invailed chart info input")));
 				}
 				let split:Vec<&str> = self.temp.now_project_path.split("\\\\").collect(); 

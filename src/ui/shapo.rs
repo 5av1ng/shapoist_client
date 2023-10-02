@@ -29,7 +29,7 @@ pub struct Shapo {
 	pub shape: Shape,
 	pub animation: Vec<StyleAnimation>,
 	pub label: Vec<String>,
-	pub sustain_time: Option<(u64,u64)>, // start & end time
+	pub sustain_time: Option<(i64,i64)>, // start & end time
 	pub if_delete: bool
 }
 

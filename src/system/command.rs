@@ -1,4 +1,3 @@
-use crate::log_export::log_export::print_log;
 use pest::iterators::Pair;
 use crate::play::note::Note;
 use crate::play::note::JudgeField;
@@ -15,6 +14,7 @@ use pest_derive::Parser;
 #[grammar = "./system/command.pest"]
 pub struct CommandParser;
 
+#[derive(Debug)]
 pub enum DeltaType {
 	Note(Note),
 	JudgeField(JudgeField),
@@ -89,7 +89,8 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 									None => return Err(ShapoError::SystemError(String::from("invaild selection")))
 								};
 								let backup = notes[*j].clone();
-								notes[*j] = notes[*j].clone() | parse_toml(&text.to_string())?;
+								let note: Note = parse_toml(&text.to_string())?;
+								notes[*j] = backup.clone() | note.clone();
 								delta = DeltaType::Note(notes[*j].clone() - backup);
 							},
 							PossibleChartSelection::Shape(i) => { 
@@ -226,7 +227,7 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 			};
 		},
 		Rule::Time => {
-			temp.project.current_time = match file.into_inner().next().unwrap().as_str().parse::<u64>() {
+			temp.project.current_time = match file.into_inner().next().unwrap().as_str().parse::<i64>() {
 				Ok(t) => t,
 				Err(e) => return Err(ShapoError::ParseError(ParseError::NaN(e)))
 			}
@@ -235,8 +236,8 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 			let mut inner_rule = file.into_inner();
 			let type_rule = inner_rule.next().unwrap().as_str();
 			let toml = inner_rule.next().unwrap().as_str();
-			let uspb = (60.0 * 1e6 / temp.project.chart.bpm) as u64;
-			fn handle_note(input: Note, toml: &str, uspb: u64, temp: &mut Temp) -> Result<(), ShapoError>{
+			let uspb = (60.0 * 1e6 / temp.project.chart.bpm) as i64;
+			fn handle_note(input: Note, toml: &str, uspb: i64, temp: &mut Temp) -> Result<(), ShapoError>{
 				match temp.project.chart.note.get_mut(&temp.project.now_judge_field_id) {
 					Some(t) => t,
 					None => return Err(ShapoError::SystemError(String::from("invaild judge field")))
@@ -251,7 +252,7 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 				Ok(())
 			}
 
-			fn handle_shapo(input: Shapo, toml: &str, uspb: u64, temp: &mut Temp) -> Result<(), ShapoError>{
+			fn handle_shapo(input: Shapo, toml: &str, uspb: i64, temp: &mut Temp) -> Result<(), ShapoError>{
 				let out = Shapo {
 					label: vec!(temp.project.now_shape_id.to_string()),
 					sustain_time: Some((temp.project.current_time - 4 * uspb, temp.project.current_time)),
@@ -350,8 +351,6 @@ pub fn command_parse(input: &String, temp: &mut Temp, if_save_command: bool) -> 
 	if if_save_command {
 		temp.commands.push(input.to_string());
 	}
-
-	print_log(input);
 
 	Ok(())
 }

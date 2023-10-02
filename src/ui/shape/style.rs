@@ -77,8 +77,8 @@ pub struct StyleAnimation {
 	pub start_value: f32,
 	pub end_value: f32,
 	pub animation: Animation,
-	pub start_time: u64,
-	pub animate_time: u64,
+	pub start_time: i64,
+	pub animate_time: i64,
 	pub if_animating: bool,
 	pub id: usize
 }

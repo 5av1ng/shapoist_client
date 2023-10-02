@@ -13,8 +13,8 @@ pub enum TimerError {
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone, PartialEq)]
 #[serde(default)]
 pub struct Timer {
-	last_pause_time: Option<u64>,
-	last_start_time: Option<u64>,
+	last_pause_time: Option<i64>,
+	last_start_time: Option<i64>,
 	if_paused:bool,
 	pub id: usize
 }
@@ -73,8 +73,8 @@ impl Timer {
 	// 	}
 	// }
 
-	pub fn read(&self) -> Result<u64,ShapoError> {
-		let time: u64;
+	pub fn read(&self) -> Result<i64,ShapoError> {
+		let time: i64;
 		if self.if_paused {
 			let pause = match self.last_pause_time {
 				Some(t) => t,
@@ -97,7 +97,7 @@ impl Timer {
 		}
 	}
 
-	pub fn set(&mut self, delay: u64) -> Result<(),ShapoError> {
+	pub fn set(&mut self, delay: i64) -> Result<(),ShapoError> {
 		let last_start_time = match self.last_start_time {
 			Some(t) => t - delay,
 			None => return Err(ShapoError::TimerError(TimerError::CouldNotSet(String::from("havn't start yet"))))
@@ -107,10 +107,10 @@ impl Timer {
 	}
 }
 
-fn read_time() -> Result<u64, ShapoError> {
+fn read_time() -> Result<i64, ShapoError> {
 	let time = SystemTime::now().duration_since(UNIX_EPOCH);
 	match time {
-		Ok(t) => return Ok(t.as_micros() as u64),
+		Ok(t) => return Ok(t.as_micros() as i64),
 		Err(e) => return Err(ShapoError::TimerError(TimerError::CouldNotRead(e.to_string()))),
 	}
 }

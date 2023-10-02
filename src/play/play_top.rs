@@ -28,7 +28,7 @@ pub struct Replay {
 #[derive(serde::Deserialize, serde::Serialize, Clone, Debug)]
 #[serde(default)]
 pub struct Click {
-	pub click_time: Option<u64>,
+	pub click_time: Option<i64>,
 	pub note_position: Vec2
 }
 
@@ -58,7 +58,7 @@ pub struct PlayTop {
 	pub replay: Replay,
 	pub if_paused: bool,
 	pub path: String,
-	pub current_time: u64,
+	pub current_time: i64,
 	pub touch: HashMap<u64, Touch>
 }
 
@@ -212,13 +212,13 @@ impl PlayTop {
 
 	pub fn play(&mut self) -> Result<Back,ShapoError> {
 		// self.timer.start()?;
-		let delta = match self.current_time.checked_sub(3 * 1e6 as u64) {
+		let delta = match self.current_time.checked_sub(3 * 1e6 as i64) {
 			Some(t) => t,
 			None => 0,
 		};
 		self.current_time = delta;
 		self.timer()?;
-		// self.timer.set(3 * 1e6 as u64)?;
+		// self.timer.set(3 * 1e6 as i64)?;
 		self.if_paused = false;
 		Ok(Back::Play)
 	}

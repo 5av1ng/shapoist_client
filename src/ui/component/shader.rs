@@ -63,7 +63,7 @@ impl Shader {
 		if !setting.if_shader {
 			return Ok(vec!())
 		}
-		let time:u64;
+		let time:i64;
 		if let Some(t) = self.timer {
 			time = t.read()?;
 		}else {
@@ -114,7 +114,7 @@ impl Shader {
 }
 
 impl Built {
-	fn render(&self, size: &[usize;2], time: u64) -> Result<Vec<Color32>,ShapoError> {
+	fn render(&self, size: &[usize;2], time: i64) -> Result<Vec<Color32>,ShapoError> {
 		let mut out_vec = vec!();
 		let mut thread_handler = vec!();
 		let setting = read_settings()?;
@@ -207,7 +207,7 @@ impl Built {
 // 	output
 // }
 
-fn mesh_with_light(x: usize,y:usize,size: &[usize;2], time: u64, background_color: Color32) -> Color32 {
+fn mesh_with_light(x: usize,y:usize,size: &[usize;2], time: i64, background_color: Color32) -> Color32 {
 	let mut u = (x as f32 - size[1] as f32 / 2.0) / size[1] as f32;
 	let mut v = (y as f32 - size[0] as f32 / 2.0) / size[0] as f32;
 	u = u.abs();
