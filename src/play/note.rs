@@ -118,6 +118,7 @@ pub struct Chart {
 pub enum PossibleChartSelection {
 	JudgeField(usize),
 	Note(usize, usize),
+	NoteShape(usize, usize, usize),
 	Shape(usize)
 }
 
@@ -805,7 +806,8 @@ impl Note {
 	fn check(&mut self) {
 		let mut new_shape = vec!();
 		if self.shape.is_some() {
-			for a in self.shape.clone().unwrap() {
+			for mut a in self.shape.clone().unwrap() {
+				a.check(&(self.start_time, self.click_time));
 				if !a.if_delete {
 					new_shape.push(a);
 				}

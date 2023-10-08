@@ -544,7 +544,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 					return Err(ShapoError::SystemError(format!("cant find shape")))
 				}
 				if let Some(t) = egui::Window::new(format!("{} {}", language[53].clone(), note[*n].id)).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<Back, ShapoError> {
-					let back_message = note_texture(ui, &mut note[*n], &language, &uspb, &current_beat,&temp.project.now_shape_id,&temp.project.new_judge_field_id)?;
+					let back_message = note_texture(ui, &mut note[*n], &language, &uspb, &current_beat,&temp.project.now_shape_id,&temp.project.new_judge_field_id, false)?;
 					if ui.button(language[129].clone()).clicked() || note[*n].if_delete {
 						window_to_close = Some(id)
 					}
@@ -565,7 +565,7 @@ pub fn edit_page(ui: &mut egui::Ui, _: &Vec2, _: &mut Vec<Timer>, if_enabled: bo
 				for a in &mut temp.project.chart.shape {
 					if a.label.clone()[0] == s.clone() {
 						if let Some(t) = egui::Window::new(format!("{} {}", language[51].clone(), a.label.clone()[0])).scroll2([true;2]).resizable(true).show(ui.ctx(), |ui| -> Result<Back, ShapoError> {
-							if let Back::Change(back, u) = shape_texture(ui, a, &language, &uspb)? {
+							if let Back::Change(back, u) = shape_texture(ui, a, &language, &uspb, false, false)? {
 								return Ok(Back::Change(back,u))
 							}
 							if ui.button(language[129].clone()).clicked() {
@@ -684,7 +684,7 @@ fn judge_field_texture(ui: &mut egui::Ui, language: &Vec<String>, judge_field: &
 	}).inner
 }
 
-fn note_texture(ui: &mut egui::Ui, note: &mut Note, language: &Vec<String>, uspb: &i64, current_beat: &f64,now_shape_id: &usize, new_judge_field_id: &usize)  -> Result<Back, ShapoError> {
+fn note_texture(ui: &mut egui::Ui, note: &mut Note, language: &Vec<String>, uspb: &i64, current_beat: &f64,now_shape_id: &usize, new_judge_field_id: &usize, is_inside_timeline: bool)  -> Result<Back, ShapoError> {
 	let mut back_message = Back::Nothing;
 	let new_note = note;
 	let backup = new_note.clone();
@@ -692,7 +692,7 @@ fn note_texture(ui: &mut egui::Ui, note: &mut Note, language: &Vec<String>, uspb
 		let mut number = 0;
 		for mut c in &mut *s {
 			if let Some(t) = ui.collapsing(format!("{} {}", language[51].clone(), number), |ui| -> Result<Back, ShapoError> {
-				shape_texture(ui, &mut c, &language, &uspb)
+				shape_texture(ui, &mut c, &language, &uspb, true, is_inside_timeline)
 			}).body_returned {
 				if let Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(change)),_) = t? {
 					back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::Shape(change))), String::new());
@@ -751,6 +751,12 @@ fn note_texture(ui: &mut egui::Ui, note: &mut Note, language: &Vec<String>, uspb
 			ui.add(egui::DragValue::new(&mut new_note.judge_field_id));
 			if backup.judge_field_id != new_note.judge_field_id {
 				back_message = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Note(NoteChange::JudgeFieldId)), String::new());
+			}
+			if new_note.judge_field_id > max_judge_field_id {
+				new_note.judge_field_id = max_judge_field_id;
+			}
+			if new_note.judge_field_id < 0 {
+				new_note.judge_field_id = 0;
 			}
 			ui.end_row();
 
@@ -828,7 +834,7 @@ fn note_texture(ui: &mut egui::Ui, note: &mut Note, language: &Vec<String>, uspb
 	Ok(back_message)
 }
 
-fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, uspb: &i64) -> Result<Back, ShapoError> {
+fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, uspb: &i64, is_inside_note: bool, is_inside_timeline: bool) -> Result<Back, ShapoError> {
 	let backup = shape.clone();
 	let mut back = egui::Grid::new("dafu678936ikjhjzxc").show(ui, |ui| -> Result<Back, ShapoError> {
 		let mut back = Back::Nothing;
@@ -847,24 +853,26 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 		}
 		ui.end_row();
 
-		if let Some((start_time, end_time)) = shape.sustain_time {
-			let mut start_time_beat = start_time as f64 / *uspb as f64;
-			let mut end_time_beat = end_time as f64 / *uspb as f64;
-			ui.label(language[119].clone());
-			ui.add(egui::DragValue::new(&mut start_time_beat).speed(0.01));
-			if start_time_beat != start_time as f64 / *uspb as f64 {
-				shape.sustain_time = Some(((start_time_beat * *uspb as f64) as i64, end_time));
-				back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::SustainTime)), String::new());
-			}
-			ui.end_row();
+		if !is_inside_note {
+			if let Some((start_time, end_time)) = shape.sustain_time {
+				let mut start_time_beat = start_time as f64 / *uspb as f64;
+				let mut end_time_beat = end_time as f64 / *uspb as f64;
+				ui.label(language[119].clone());
+				ui.add(egui::DragValue::new(&mut start_time_beat).speed(0.01));
+				if start_time_beat != start_time as f64 / *uspb as f64 {
+					shape.sustain_time = Some(((start_time_beat * *uspb as f64) as i64, end_time));
+					back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::SustainTime)), String::new());
+				}
+				ui.end_row();
 
-			ui.label(language[130].clone());
-			ui.add(egui::DragValue::new(&mut end_time_beat).speed(0.01));
-			if end_time_beat != end_time as f64 / *uspb as f64 {
-				shape.sustain_time = Some((start_time ,(end_time_beat * *uspb as f64) as i64));
-				back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::SustainTime)), String::new());
+				ui.label(language[130].clone());
+				ui.add(egui::DragValue::new(&mut end_time_beat).speed(0.01));
+				if end_time_beat != end_time as f64 / *uspb as f64 {
+					shape.sustain_time = Some((start_time ,(end_time_beat * *uspb as f64) as i64));
+					back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::SustainTime)), String::new());
+				}
+				ui.end_row();
 			}
-			ui.end_row();
 		}
 
 		ui.label(language[75].clone());
@@ -1037,205 +1045,207 @@ fn shape_texture(ui: &mut egui::Ui, shape: &mut Shapo, language: &Vec<String>, u
 		Ok(back)
 	}).inner?;
 
-	let mut delete = None;
-	if shape.animation.len() != 0{ 
-		for a in 0..shape.animation.len() {
-			let backup = shape.animation[a].clone();
-			ui.collapsing(format!("{} {}",language[115].clone(),a),|ui| {
-				egui::Grid::new("asfi65uihfkjxcyv").show(ui, |ui| {
-					if ui.button(language[125].clone()).clicked() {
-						delete = Some(a);
-					}
-					ui.end_row();
-					let text;
-					match &mut shape.animation[a].style {
-						StyleAnimate::Position(cb) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[121].clone();
+	if !is_inside_timeline {
+		let mut delete = None;
+		if !shape.animation.is_empty() { 
+			for a in 0..shape.animation.len() {
+				let backup = shape.animation[a].clone();
+				ui.collapsing(format!("{} {}",language[115].clone(),a),|ui| {
+					egui::Grid::new("asfi65uihfkjxcyv").show(ui, |ui| {
+						if ui.button(language[125].clone()).clicked() {
+							delete = Some(a);
 						}
-						StyleAnimate::Size(cb) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[122].clone();
-						},
-						StyleAnimate::Rotate => text = language[77].clone(),
-						StyleAnimate::RoutateCenter(cb) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[123].clone();
-						},
-						StyleAnimate::Alpha => {
-							text = language[155].clone();
-						},
-						StyleAnimate::ShapeAnimate(ShapeAnimate::Rectangle(RectangleAnimate::BottomRightPoint(cb))) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[150].clone();
-						},
-						StyleAnimate::ShapeAnimate(ShapeAnimate::Circle(CircleAnimate::Radius)) => {
-							text = language[104].clone();
-						},
-						StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point1(cb))) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[151].clone();
-						},
-						StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point2(cb))) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[152].clone();
-						},
-						StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point3(cb))) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[153].clone();
-						},
-						StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point4(cb))) => {
-							bezier_curve_texture(ui,cb,language);
-							text = language[154].clone();
-						},
-						_ => todo!(),
-					}
-					ui.label(language[116].clone());
-					egui::ComboBox::from_label(language[116].clone()).selected_text(text).show_ui(ui, |ui| {
-						ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Position(CubicBezier::default()), language[121].clone());
-						ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Size(CubicBezier::default()), language[122].clone());
-						ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Rotate, language[77].clone());
-						ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::RoutateCenter(CubicBezier::default()), language[123].clone());
-						ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Alpha, language[155].clone());
-						match shape.shape {
-							Shape::Rectangle(_) => {
-								ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Rectangle(RectangleAnimate::BottomRightPoint(CubicBezier::default()))), language[150].clone());
+						ui.end_row();
+						let text;
+						match &mut shape.animation[a].style {
+							StyleAnimate::Position(cb) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[121].clone();
+							}
+							StyleAnimate::Size(cb) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[122].clone();
 							},
-							Shape::Circle(_) => {
-								ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Circle(CircleAnimate::Radius)), language[104].clone());
+							StyleAnimate::Rotate => text = language[77].clone(),
+							StyleAnimate::RoutateCenter(cb) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[123].clone();
 							},
-							Shape::CubicBezier(_) => {
-								ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point1(CubicBezier::default()))), language[151].clone());
-								ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point2(CubicBezier::default()))), language[152].clone());
-								ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point3(CubicBezier::default()))), language[153].clone());
-								ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point4(CubicBezier::default()))), language[154].clone());
+							StyleAnimate::Alpha => {
+								text = language[155].clone();
 							},
-							_=> todo!(),
+							StyleAnimate::ShapeAnimate(ShapeAnimate::Rectangle(RectangleAnimate::BottomRightPoint(cb))) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[150].clone();
+							},
+							StyleAnimate::ShapeAnimate(ShapeAnimate::Circle(CircleAnimate::Radius)) => {
+								text = language[104].clone();
+							},
+							StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point1(cb))) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[151].clone();
+							},
+							StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point2(cb))) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[152].clone();
+							},
+							StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point3(cb))) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[153].clone();
+							},
+							StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point4(cb))) => {
+								bezier_curve_texture(ui,cb,language);
+								text = language[154].clone();
+							},
+							_ => todo!(),
 						}
+						ui.label(language[116].clone());
+						egui::ComboBox::from_label(language[116].clone()).selected_text(text).show_ui(ui, |ui| {
+							ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Position(CubicBezier::default()), language[121].clone());
+							ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Size(CubicBezier::default()), language[122].clone());
+							ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Rotate, language[77].clone());
+							ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::RoutateCenter(CubicBezier::default()), language[123].clone());
+							ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::Alpha, language[155].clone());
+							match shape.shape {
+								Shape::Rectangle(_) => {
+									ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Rectangle(RectangleAnimate::BottomRightPoint(CubicBezier::default()))), language[150].clone());
+								},
+								Shape::Circle(_) => {
+									ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Circle(CircleAnimate::Radius)), language[104].clone());
+								},
+								Shape::CubicBezier(_) => {
+									ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point1(CubicBezier::default()))), language[151].clone());
+									ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point2(CubicBezier::default()))), language[152].clone());
+									ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point3(CubicBezier::default()))), language[153].clone());
+									ui.selectable_value(&mut shape.animation[a].style, StyleAnimate::ShapeAnimate(ShapeAnimate::Bezier(CubicBezierAnimate::Point4(CubicBezier::default()))), language[154].clone());
+								},
+								_=> todo!(),
+							}
+						});
+						ui.end_row();
+
+						ui.label(language[117].clone());
+						ui.add(egui::DragValue::new(&mut shape.animation[a].start_value).speed(0.01));
+						ui.end_row();
+
+						ui.label(language[118].clone());
+						ui.add(egui::DragValue::new(&mut shape.animation[a].end_value).speed(0.01));
+						ui.end_row();
+
+						ui.label(language[119].clone());
+						let mut divided = shape.animation[a].start_time as f64 / *uspb as f64;
+						ui.add(egui::DragValue::new(&mut divided).speed(0.01));
+						if divided != shape.animation[a].start_time as f64 / *uspb as f64 {
+							shape.animation[a].start_time = (divided * *uspb as f64) as i64
+						}
+						ui.end_row();
+
+						ui.label(language[120].clone());
+						let mut divided = shape.animation[a].animate_time as f64 / *uspb as f64;
+						ui.add(egui::DragValue::new(&mut divided).speed(0.01));
+						if divided != shape.animation[a].animate_time as f64 / *uspb as f64 {
+							shape.animation[a].animate_time = (divided * *uspb as f64) as i64
+						}
+						ui.end_row();
+
+						ui.label(language[124].clone());
+						ui.end_row();
 					});
-					ui.end_row();
 
-					ui.label(language[117].clone());
-					ui.add(egui::DragValue::new(&mut shape.animation[a].start_value).speed(0.01));
-					ui.end_row();
-
-					ui.label(language[118].clone());
-					ui.add(egui::DragValue::new(&mut shape.animation[a].end_value).speed(0.01));
-					ui.end_row();
-
-					ui.label(language[119].clone());
-					let mut divided = shape.animation[a].start_time as f64 / *uspb as f64;
-					ui.add(egui::DragValue::new(&mut divided).speed(0.01));
-					if divided != shape.animation[a].start_time as f64 / *uspb as f64 {
-						shape.animation[a].start_time = (divided * *uspb as f64) as i64
+					ui.separator();
+					fn hard_compresser(vec_input: Vec2) -> Vec2 {
+						let mut vec = vec_input;
+						if vec_input.x < 0.0 {
+							vec.x = 0.0
+						}else if vec_input.x > 1.0 {
+							vec.x = 1.0
+						}else {
+							vec.x = vec_input.x
+						}
+						if vec_input.y < 0.0 {
+							vec.y = 0.0
+						}else if vec_input.y > 1.0 {
+							vec.y = 1.0
+						}else {
+							vec.y = vec_input.y
+						}
+						vec
 					}
-					ui.end_row();
+					let canvas_size = Vec2::new(ui.available_width(), 150.0);
+					let offect = Vec2{x: ui.max_rect().left(), y: ui.cursor().top()};
+					let point_0 = offect.to_pos2();
+					let mut point_1 = (shape.animation[a].animation.control_point_one * canvas_size + offect).to_pos2();
+					let mut point_2 = (shape.animation[a].animation.control_point_two * canvas_size + offect).to_pos2();
+					let point_3 = (Vec2::new(1.0, 1.0) * canvas_size + offect).to_pos2();
+					ui.allocate_painter(canvas_size, Sense::hover());
 
-					ui.label(language[120].clone());
-					let mut divided = shape.animation[a].animate_time as f64 / *uspb as f64;
-					ui.add(egui::DragValue::new(&mut divided).speed(0.01));
-					if divided != shape.animation[a].animate_time as f64 / *uspb as f64 {
-						shape.animation[a].animate_time = (divided * *uspb as f64) as i64
+					let vol_rect_1 = Rect { min: (point_1.to_vec2() - Vec2::new(5.0,5.0)).to_pos2(), max: (point_1.to_vec2() + Vec2::new(5.0,5.0)).to_pos2() };
+					let (_, response_1) = ui.allocate_ui_at_rect(vol_rect_1, |ui| {
+						ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect_1.max.x - vol_rect_1.min.x, y: vol_rect_1.max.y - vol_rect_1.min.y}, egui::Sense::drag())).inner
+					}).inner;
+					let vol_rect_2 = Rect { min: (point_2.to_vec2() - Vec2::new(5.0,5.0)).to_pos2(), max: (point_2.to_vec2() + Vec2::new(5.0,5.0)).to_pos2() };
+					let (_, response_2) = ui.allocate_ui_at_rect(vol_rect_2, |ui| {
+						ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect_2.max.x - vol_rect_2.min.x, y: vol_rect_2.max.y - vol_rect_2.min.y}, egui::Sense::drag())).inner
+					}).inner;
+
+					point_1 = point_1 + response_1.drag_delta();
+					point_2 = point_2 + response_2.drag_delta();
+
+					if point_1 != (shape.animation[a].animation.control_point_one * canvas_size + offect).to_pos2() {
+						let normalized = hard_compresser((point_1.to_vec2() - offect) / canvas_size);
+						shape.animation[a].animation.control_point_one = normalized
 					}
-					ui.end_row();
 
-					ui.label(language[124].clone());
-					ui.end_row();
+					if point_2 != (shape.animation[a].animation.control_point_two * canvas_size + offect).to_pos2() {
+						let normalized = hard_compresser((point_2.to_vec2() - offect) / canvas_size);
+						shape.animation[a].animation.control_point_two = normalized
+					}
+
+					ui.painter().circle(point_1, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
+					ui.painter().circle(point_2, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
+					ui.painter().circle(point_0, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
+					ui.painter().circle(point_3, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
+					ui.painter().line_segment([point_0, point_1], Stroke::new(1.5, Color32::WHITE));
+					ui.painter().line_segment([point_3, point_2], Stroke::new(1.5, Color32::WHITE));
+
+					ui.painter().add(CubicBezierShape{
+						points: [
+							point_0,
+							point_1,
+							point_2,
+							point_3,
+						],
+						fill: Color32::TRANSPARENT,
+						stroke: Stroke::new(3.0, Color32::WHITE),
+						closed: false
+					});
 				});
-
 				ui.separator();
-				fn hard_compresser(vec_input: Vec2) -> Vec2 {
-					let mut vec = vec_input;
-					if vec_input.x < 0.0 {
-						vec.x = 0.0
-					}else if vec_input.x > 1.0 {
-						vec.x = 1.0
-					}else {
-						vec.x = vec_input.x
-					}
-					if vec_input.y < 0.0 {
-						vec.y = 0.0
-					}else if vec_input.y > 1.0 {
-						vec.y = 1.0
-					}else {
-						vec.y = vec_input.y
-					}
-					vec
+				ui.end_row();
+
+				if backup != shape.animation[a] {
+					back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Animation)), String::new());
 				}
-				let canvas_size = Vec2::new(ui.available_width(), 150.0);
-				let offect = Vec2{x: ui.max_rect().left(), y: ui.cursor().top()};
-				let point_0 = offect.to_pos2();
-				let mut point_1 = (shape.animation[a].animation.control_point_one * canvas_size + offect).to_pos2();
-				let mut point_2 = (shape.animation[a].animation.control_point_two * canvas_size + offect).to_pos2();
-				let point_3 = (Vec2::new(1.0, 1.0) * canvas_size + offect).to_pos2();
-				ui.allocate_painter(canvas_size, Sense::hover());
-
-				let vol_rect_1 = Rect { min: (point_1.to_vec2() - Vec2::new(5.0,5.0)).to_pos2(), max: (point_1.to_vec2() + Vec2::new(5.0,5.0)).to_pos2() };
-				let (_, response_1) = ui.allocate_ui_at_rect(vol_rect_1, |ui| {
-					ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect_1.max.x - vol_rect_1.min.x, y: vol_rect_1.max.y - vol_rect_1.min.y}, egui::Sense::drag())).inner
-				}).inner;
-				let vol_rect_2 = Rect { min: (point_2.to_vec2() - Vec2::new(5.0,5.0)).to_pos2(), max: (point_2.to_vec2() + Vec2::new(5.0,5.0)).to_pos2() };
-				let (_, response_2) = ui.allocate_ui_at_rect(vol_rect_2, |ui| {
-					ui.centered_and_justified(|ui| ui.allocate_exact_size(Vec2{x: vol_rect_2.max.x - vol_rect_2.min.x, y: vol_rect_2.max.y - vol_rect_2.min.y}, egui::Sense::drag())).inner
-				}).inner;
-
-				point_1 = point_1 + response_1.drag_delta();
-				point_2 = point_2 + response_2.drag_delta();
-
-				if point_1 != (shape.animation[a].animation.control_point_one * canvas_size + offect).to_pos2() {
-					let normalized = hard_compresser((point_1.to_vec2() - offect) / canvas_size);
-					shape.animation[a].animation.control_point_one = normalized
-				}
-
-				if point_2 != (shape.animation[a].animation.control_point_two * canvas_size + offect).to_pos2() {
-					let normalized = hard_compresser((point_2.to_vec2() - offect) / canvas_size);
-					shape.animation[a].animation.control_point_two = normalized
-				}
-
-				ui.painter().circle(point_1, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
-				ui.painter().circle(point_2, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
-				ui.painter().circle(point_0, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
-				ui.painter().circle(point_3, 10.0, Color32::TRANSPARENT, Stroke::new(3.0, Color32::WHITE));
-				ui.painter().line_segment([point_0, point_1], Stroke::new(1.5, Color32::WHITE));
-				ui.painter().line_segment([point_3, point_2], Stroke::new(1.5, Color32::WHITE));
-
-				ui.painter().add(CubicBezierShape{
-					points: [
-						point_0,
-						point_1,
-						point_2,
-						point_3,
-					],
-					fill: Color32::TRANSPARENT,
-					stroke: Stroke::new(3.0, Color32::WHITE),
-					closed: false
-				});
-			});
-			ui.separator();
-			ui.end_row();
-
-			if backup != shape.animation[a] {
-				back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Animation)), String::new());
 			}
 		}
-	}
-	let mut new_animation = vec!();
-	if delete.is_some() {
-		for a in 0..shape.animation.len() {
-			if a != delete.unwrap() {
-				new_animation.push(shape.animation[a].clone())
-			}
-		} 
-		shape.animation = new_animation.clone();
-	}
+		let mut new_animation = vec!();
+		if delete.is_some() {
+			for a in 0..shape.animation.len() {
+				if a != delete.unwrap() {
+					new_animation.push(shape.animation[a].clone())
+				}
+			} 
+			shape.animation = new_animation.clone();
+		}
 
-	if ui.button(language[114].clone()).clicked() {
-		shape.animation.push(StyleAnimation{
-			start_time: shape.sustain_time.unwrap().0,
-			animate_time: shape.sustain_time.unwrap().1 - shape.sustain_time.unwrap().0,
-			..Default::default()
-		});
-		back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Animation)), String::new());
+		if ui.button(language[114].clone()).clicked() {
+			shape.animation.push(StyleAnimation{
+				start_time: shape.sustain_time.unwrap().0,
+				animate_time: shape.sustain_time.unwrap().1 - shape.sustain_time.unwrap().0,
+				..Default::default()
+			});
+			back = Back::Change(ChangeType::ChartTemp(PossibleChartChange::Shape(PossibleShapoChange::Animation)), String::new());
+		}
 	}
 
 	if ui.button(language[98].clone()).clicked() {
@@ -1343,8 +1353,8 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &i64, temp: &mut Te
 						vec_back.push(judge_field_texture(ui, language, &mut temp.project.chart.judge_field, uspb, a)?);
 						for n in 0..b.len() {
 							let collapsing_note = ui.collapsing(format!("{} {}", language[53].clone(), b[n].id), |ui| -> Result<Vec<Back>, ShapoError> {
-								let vec_back = vec!(); 
-								note_texture(ui, &mut b[n], &language, &uspb, &current_beat, &temp.project.now_shape_id,&temp.project.new_judge_field_id)?;
+								let vec_back = vec!();
+								note_texture(ui, &mut b[n], &language, &uspb, &current_beat, &temp.project.now_shape_id,&temp.project.new_judge_field_id, true)?;
 								if b[n].label.clone().len() > 0 {
 									if b[n].label.clone()[0] == "Copy".to_string() {
 										b[n].label.clone()[0] = String::new();
@@ -1384,7 +1394,7 @@ fn timeline(ui: &mut egui::Ui, language: &Vec<String>, uspb: &i64, temp: &mut Te
 					let mut vec_back = vec!();
 					for s in &mut temp.project.chart.shape {
 						let collapsing_shape = ui.collapsing(format!("{} {}", language[51].clone(), s.label.clone()[0]), |ui| -> Result<Back, ShapoError> {
-							if let Back::Change(back, u) = shape_texture(ui, s, &language, &uspb)? {
+							if let Back::Change(back, u) = shape_texture(ui, s, &language, &uspb, false, true)? {
 								return Ok(Back::Change(back,u))
 							};
 

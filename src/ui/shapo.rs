@@ -287,6 +287,18 @@ impl Shapo {
 			..Default::default()
 		}
 	}
+
+	pub fn check(&mut self, time: &(i64, i64)) {
+		if self.sustain_time.is_some() {
+			let delta_a = time.0 - self.sustain_time.unwrap().0;
+			let delta_b = time.1 - self.sustain_time.unwrap().1;
+			self.sustain_time = Some((delta_a + self.sustain_time.unwrap().0,delta_b + self.sustain_time.unwrap().1));
+			for a in &mut self.animation {
+				a.start_time = a.start_time + delta_a;
+				a.animate_time = a.animate_time + delta_a;
+			}
+		}
+	}
 }
 
 impl Default for Shape {
