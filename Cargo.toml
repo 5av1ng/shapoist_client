@@ -1,0 +1,37 @@
+[package]
+name = "shapoist_client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+shapoist_request = { path = "../shapoist_request", features = ["client"] }
+shapoist_core = { path = "../shapoist_core" }
+nablo = { path = "../nablo", features = ["presets"] }
+nablo_shape = { path = "../nablo_shape" }
+log = "0.4.20"
+env_logger = "0.10.1"
+cfg-if = "1.0.0"
+anyhow = "1.0.79"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook = "0.1.7"
+console_log = "1.0"
+wasm-bindgen = "0.2.87"
+wasm-bindgen-futures = "0.4.34"
+web-sys = { version = "0.3.64", features = [
+	"Document",
+	"Window",
+	"Element",
+]}
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+path="src/lib.rs"
+name="shapoist_client"
+
+[profile.dev.package."*"]
+opt-level = 3
