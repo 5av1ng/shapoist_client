@@ -1,3 +1,7 @@
+use crate::edit::EditRouter;
+use crate::edit::edit;
+use crate::result_page::result_page;
+use crate::playpage::playpage;
 use crate::detail::detail;
 use crate::mainpage::mainpage;
 use crate::mainpage::MainRouter;
@@ -15,6 +19,9 @@ use wasm_bindgen::prelude::wasm_bindgen;
 mod mainpage;
 mod resources;
 mod detail;
+mod playpage;
+mod result_page;
+mod edit;
 
 struct Shapoist {
 	core: Option<Result<ShapoistCore, ShapoistError>>,
@@ -22,16 +29,19 @@ struct Shapoist {
 	is_icon_inititialized: bool,
 }
 
-enum Router {
+pub enum Router {
 	Main(MainRouter),
-	Detail
+	Detail,
+	PlayPage,
+	ResultPage,
+	Edit(EditRouter)
 }
 
 impl Shapoist {
 	fn init() -> Self {
 		Self {
 			core: None,
-			router: Router::Main(MainRouter::Main),
+			router: Router::Main(MainRouter::default()),
 			is_icon_inititialized: false,
 		}
 	}
@@ -49,26 +59,29 @@ impl App for Shapoist {
 					}
 				}
 			}
+			if let None = self.core {
+				self.core = Some(ShapoistCore::new("./"));
+			}
 			let core = if let Some(t) = &mut self.core {
 				match t {
 					Ok(core) => core,
 					Err(e) => {
-						ui.add(Label::new(format!("{}", e)));
+						msg.message(format!("{}", e), ui);
 						return;
 					}
 				}
 			}else {
-				self.core = Some(ShapoistCore::new("./"));
-				return
+				unreachable!()
 			};
 			if let Err(e) = core.frame() {
-				ui.add(Label::new(format!("{}", e)));
-				// TODO: change this to dialog
-				panic!("{:?}", e);
+				msg.message(format!("{}", e), ui)
 			};
 			match &mut self.router {
 				Router::Main(_) => mainpage(&mut self.router, ui, msg, core),
 				Router::Detail => detail(&mut self.router, ui, msg, core),
+				Router::PlayPage => playpage(&mut self.router, ui, msg, core),
+				Router::ResultPage => result_page(&mut self.router, ui, msg, core),
+				Router::Edit(_) => edit(&mut self.router, ui, msg, core),
 			}
 		});
 	}
@@ -84,7 +97,7 @@ fn run() {
 			env_logger::Builder::new()
 			.filter(Some("shapoist_core::system::io_functions"), LevelFilter::Debug)
 			.filter(Some("shapoist_core::system::command"), LevelFilter::Debug)
-			.filter(Some("shapoist_core::system::core_functions"), LevelFilter::Debug)
+			.filter(Some("shapoist_core::system::core_functions"), LevelFilter::Info)
 			.filter(Some("shapoist_core::system::core_structs"), LevelFilter::Debug)
 			.filter(Some("shapoist_core::system::timer"), LevelFilter::Debug)
 			.filter(Some("nablo::ui"), LevelFilter::Debug)
@@ -92,7 +105,10 @@ fn run() {
 			.init();
 		}
 	}
-	let _ = Manager::new(Shapoist::init()).run();
+	let _ = Manager::new_with_settings(Shapoist::init(), nablo::Settings {
+		title: "Shapoist".into(),
+		..Default::default()
+	}).run();
 }
 
 #[allow(dead_code)]
