@@ -38,3 +38,13 @@ name="shapoist_client"
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.release]
+debug = true
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "frames"
+harness = false

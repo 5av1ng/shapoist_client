@@ -1,3 +1,4 @@
+use shapoist_core::system::core_structs::JudgeField;
 use shapoist_core::system::core_structs::PlayMode;
 use nablo::event::Key;
 use shapoist_core::system::core_structs::Diffculty;
@@ -1229,8 +1230,22 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 									}else {
 										selects.push(Select::JudgeField(id.clone()));
 									}
-									
 								};
+							}
+							if ui.button("add").is_clicked() {
+								let mut index = chart.judge_fields.len();
+								loop {
+									if let None = chart.judge_fields.get(&index.to_string()) {
+										chart.judge_fields.insert(index.to_string(), JudgeField {
+											start_time: inner.current_time,
+											sustain_time: Duration::seconds(1),
+											..Default::default()
+										});
+										break;
+									}else {
+										index = index + 1
+									}
+								}
 							}
 						});
 
@@ -1242,7 +1257,6 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 									}else {
 										selects.push(Select::ClickEffect(id.clone()));
 									}
-									
 								};
 							}
 						});
@@ -1255,9 +1269,36 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 									}else {
 										selects.push(Select::Shape(id.clone()));
 									}
-									
 								};
 							}
+							ui.collapsing("add" ,|ui, _| {
+								let mut add_shape = |ui: &mut Ui, text: String, add: ShapeElement| {
+									if ui.button(text).is_clicked() {
+										let mut index = chart.shapes.len();
+										loop {
+											if let None = chart.shapes.get(&index.to_string()) {
+												chart.shapes.insert(index.to_string(), shapoist_core::system::core_structs::Shape { 
+													shape: Shape {
+														shape: add,
+														..Default::default()
+													},
+													start_time: inner.current_time,
+													sustain_time: Duration::seconds(1),
+													..Default::default()
+												});
+												break;
+											}else {
+												index = index + 1
+											}
+										}
+									}
+								};
+								add_shape(ui, "Circle".to_string(), ShapeElement::Circle(Default::default()));
+								add_shape(ui, "Rect".to_string(), ShapeElement::Rect(Default::default()));
+								add_shape(ui, "Text".to_string(), ShapeElement::Text(Default::default()));
+								add_shape(ui, "CubicBezier".to_string(), ShapeElement::CubicBezier(Default::default()));
+								add_shape(ui, "Line".to_string(), ShapeElement::Line(Default::default()));
+							})
 						});
 					}
 				}
@@ -1312,16 +1353,22 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 						for select in &selects {
 							match &select {
 								Select::Note(inner) => {
+									let mut is_delete = false;
 									if let Some(t) = chart.notes.get_mut(inner) {
 										ui.collapsing(format!("{:?}", select), |ui, _| {
 											if let Err(e) = settings(t, inner.clone(), ui) {
 												msg.message(format!("{}", e), ui);
 											};
 											change_time(&mut t.judge_time, "judge_time".into(), ui);
+											is_delete = ui.button("delete").is_clicked();
 										});
 									};
+									if is_delete {
+										chart.notes.remove(inner);
+									}
 								},
 								Select::JudgeField(inner) => {
+									let mut is_delete = false;
 									if let Some(t) = chart.judge_fields.get_mut(inner) {
 										ui.collapsing(format!("{:?}", select), |ui, _| {
 											if let Err(e) = settings(&mut t.inner, inner.clone(), ui) {
@@ -1329,10 +1376,15 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 											};
 											change_time(&mut t.start_time, "start_time".into(), ui);
 											change_time(&mut t.sustain_time, "sustain_time".into(), ui);
+											is_delete = ui.button("delete").is_clicked();
 										});
 									};
+									if is_delete {
+										chart.judge_fields.remove(inner);
+									}
 								},
 								Select::Shape(inner) => {
+									let mut is_delete = false;
 									if let Some(t) = chart.shapes.get_mut(inner) {
 										ui.collapsing(format!("{:?}", select), |ui, _| {
 											if let Err(e) = settings(&mut t.shape, inner.clone(), ui) {
@@ -1340,16 +1392,25 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 											};
 											change_time(&mut t.start_time, "start_time".into(), ui);
 											change_time(&mut t.sustain_time, "sustain_time".into(), ui);
+											is_delete = ui.button("delete").is_clicked();
 										});
 									};
+									if is_delete {
+										chart.shapes.remove(inner);
+									}
 								},
 								Select::ClickEffect(inner) => {
+									let mut is_delete = false;
 									if let Some(t) = chart.click_effects.get_mut(inner) {
 										ui.collapsing(format!("{:?}", select), |ui, _| {
 											if let Err(e) = settings(t, inner.clone(), ui) {
 												msg.message(format!("{}", e), ui);
 											};
+											is_delete = ui.button("delete").is_clicked();
 										});
+									}
+									if is_delete {
+										chart.click_effects.remove(inner);
 									}
 								},
 								Select::Script(_) => {},

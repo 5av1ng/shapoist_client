@@ -1,3 +1,4 @@
+use nablo::prelude::shape_elements::Layer;
 use crate::edit::EditRouter;
 use crate::edit::edit;
 use crate::result_page::result_page;
@@ -23,7 +24,7 @@ mod playpage;
 mod result_page;
 mod edit;
 
-struct Shapoist {
+pub struct Shapoist {
 	core: Option<Result<ShapoistCore, ShapoistError>>,
 	router: Router,
 	is_icon_inititialized: bool,
@@ -38,7 +39,7 @@ pub enum Router {
 }
 
 impl Shapoist {
-	fn init() -> Self {
+	pub fn init() -> Self {
 		Self {
 			core: None,
 			router: Router::Main(MainRouter::default()),
@@ -83,6 +84,8 @@ impl App for Shapoist {
 				Router::ResultPage => result_page(&mut self.router, ui, msg, core),
 				Router::Edit(_) => edit(&mut self.router, ui, msg, core),
 			}
+			ui.paint_style_mut().layer = Layer::Bottom;
+			ui.put(Label::new(format!("{:.2}fps", 1.0 / ui.delay().as_seconds_f32())), Area::new(ui.window_area().right_bottom() - Vec2::new(128.0, 48.0), ui.window_area().right_bottom()));
 		});
 	}
 }
