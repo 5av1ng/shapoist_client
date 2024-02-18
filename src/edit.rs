@@ -51,11 +51,15 @@ pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &
 		}
 	}
 
-	inner.current_time = if core.timer.is_started() {
-		core.current().unwrap_or(inner.time_pointer)
-	}else {
-		inner.time_pointer
-	};
+	if let Some((_, info)) = &core.current_chart {
+		let current_offect = info.offcet;
+		let total_offect = core.settings.offcet;
+		inner.current_time = if core.timer.is_started() {
+			core.current().unwrap_or(inner.time_pointer + current_offect + total_offect) - current_offect - total_offect
+		}else {
+			inner.time_pointer
+		};
+	}
 
 	if let Some((t1, t2)) = ui.show(&mut Card::new("edit_page").set_rounding(Vec2::same(16.0)).set_color(ui.style().background_color.brighter(0.05)), |ui, _| -> (bool, bool) {
 		inner.window_sort.retain(|inside| match inside {
@@ -102,6 +106,7 @@ pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &
 		back
 	}).return_value {
 		if t1 {
+			core.clear_play();
 			*router = Router::Main(Default::default());
 		}
 		if t2 {
