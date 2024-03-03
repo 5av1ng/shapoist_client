@@ -573,7 +573,6 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 									map
 								});
 								let res = ui.add(canvas);
-								let drag_delta = res.drag_delta();
 								if res.is_multi_clicked(2) && ui.input().is_mouse_released(MouseButton::Left) {
 									let x;
 									if inner.is_adsorption {
@@ -614,7 +613,6 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 										}
 									}
 								}
-								card.scroll_delta_to(-drag_delta, ui);
 							}
 						}
 					}
@@ -1144,7 +1142,6 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 									painter.cir(4.0);
 								};
 							});
-							let drag_delta = res.drag_delta();
 							if res.is_multi_clicked(2) && ui.input().is_mouse_released(MouseButton::Left) {
 								let x;
 								if inner.is_adsorption {
@@ -1168,7 +1165,6 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								let time = x / width * sustain_time;
 								animation.remove_point(time);
 							}
-							card.scroll_delta_to(-drag_delta, ui);
 						};
 					}
 				}
