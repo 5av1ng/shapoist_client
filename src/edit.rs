@@ -474,76 +474,111 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 									painter.text("end".to_string());
 
 									let mut map: HashMap<u64, Vec<String>> = HashMap::new();
+									let mut notes = vec!();
 									for (id, note) in &chart.notes {
 										if note.judge_field_id == judge_field_id {
-											let x = note.judge_time.as_seconds_f32() / sustain_time * width;
+											notes.push((id, note));
+										}
+									}
+									notes.sort_by(|(_, note1), (_, note2)| {
+										if let JudgeType::Hold(_) = note1.judge_type {
+											if let JudgeType::Hold(_) = note2.judge_type {
+												note1.judge_time.cmp(&note2.judge_time)
+											}else {
+												std::cmp::Ordering::Less
+											}
+										}else {
+											std::cmp::Ordering::Equal
+										}
+									});
+									for (id, note) in notes {
+										let x = note.judge_time.as_seconds_f32() / sustain_time * width;
+										let y = if let JudgeType::Hold(sustain) = note.judge_type {
+											let sustain = sustain.as_seconds_f32();
 											let key = (x * 0.1).round() as u64;
 											let y = if let Some(t) = map.get_mut(&key) {
+												t.len() + 1
+											}else {
+												1
+											};
+											for i in 0..(sustain / sustain_time * beats) as usize {
+												let key = ((x + i as f32 * width / beats) * 0.1).round() as u64;
+												if let Some(t) = map.get_mut(&key) {
+													t.push(id.clone());
+												}else {
+													map.insert(key, vec!(id.clone()));
+												};
+											} 
+											y
+										}else {
+											let key = (x * 0.1).round() as u64;
+											if let Some(t) = map.get_mut(&key) {
 												t.push(id.clone());
 												t.len()
 											}else {
 												map.insert(key, vec!(id.clone()));
 												1
-											} as f32 * 32.0;
-											if x - current_scroll > card_area.width() {
-												continue;
 											}
-											let coner = Vec2::new(x - 6.0, y);
-											match note.judge_type {
-												JudgeType::Tap => {
-													painter.set_position(coner);
-													painter.cir(8.0);
-												},
-												JudgeType::Slide => {
-													painter.set_position(coner);
-													painter.set_stroke_width(2.0);
-													painter.set_color([0,0,0,0]);
-													painter.set_stroke_color(1.0);
-													painter.cir(8.0);
-													painter.set_stroke_width(0.0);
-													painter.set_color(1.0);
-												},
-												JudgeType::Flick => {
-													painter.set_position(coner);
-													painter.set_stroke_width(2.0);
-													painter.set_color([0,0,0,0]);
-													painter.set_stroke_color(1.0);
-													painter.rect(Vec2::same(16.0), Vec2::same(4.0));
-													painter.set_stroke_width(0.0);
-													painter.set_color(1.0);
-												},
-												JudgeType::Hold(sustain) => {
-													let length = sustain.as_seconds_f32() / sustain_time * width;
-													painter.set_position(coner + Vec2::x(8.0));
-													painter.set_color([1.0,1.0,1.0,0.5]);
-													painter.rect(Vec2::new(length, 16.0), Vec2::same(8.0));
-													painter.set_color(1.0);
-												},
-												JudgeType::TapAndFlick => {
-													painter.set_position(coner);
-													painter.rect(Vec2::same(16.0), Vec2::same(4.0));
-												},
-												JudgeType::AngledFilck(_) => {
-													painter.set_position(coner);
-													painter.set_stroke_width(2.0);
-													painter.set_color([0,0,0,0]);
-													painter.set_stroke_color(1.0);
-													painter.polygon(vec!(Vec2::x(8.0), Vec2::new(16.0, 8.0), Vec2::new(8.0, 16.0), Vec2::y(8.0)));
-													painter.set_stroke_width(0.0);
-													painter.set_color(1.0);
-												},
-												JudgeType::AngledTapFilck(_) => {
-													painter.set_position(coner);
-													painter.polygon(vec!(Vec2::x(8.0), Vec2::new(16.0, 8.0), Vec2::new(8.0, 16.0), Vec2::y(8.0)));
-												},
-												_ => {// TODO
-												},
-											}
-											painter.set_position(coner + Vec2::y(16.0));
-											painter.set_scale(Vec2::same(0.6));
-											painter.text(id.clone());
-											painter.set_scale(Vec2::same(1.0))
+										} as f32 * 32.0;
+										
+										if x - current_scroll > card_area.width() {
+											continue;
 										}
+										let coner = Vec2::new(x - 6.0, y);
+										match note.judge_type {
+											JudgeType::Tap => {
+												painter.set_position(coner);
+												painter.cir(8.0);
+											},
+											JudgeType::Slide => {
+												painter.set_position(coner);
+												painter.set_stroke_width(2.0);
+												painter.set_color([0,0,0,0]);
+												painter.set_stroke_color(1.0);
+												painter.cir(8.0);
+												painter.set_stroke_width(0.0);
+												painter.set_color(1.0);
+											},
+											JudgeType::Flick => {
+												painter.set_position(coner);
+												painter.set_stroke_width(2.0);
+												painter.set_color([0,0,0,0]);
+												painter.set_stroke_color(1.0);
+												painter.rect(Vec2::same(16.0), Vec2::same(4.0));
+												painter.set_stroke_width(0.0);
+												painter.set_color(1.0);
+											},
+											JudgeType::Hold(sustain) => {
+												let length = sustain.as_seconds_f32() / sustain_time * width;
+												painter.set_position(coner + Vec2::x(8.0));
+												painter.set_color([1.0,1.0,1.0,1.0]);
+												painter.rect(Vec2::new(length, 16.0), Vec2::same(8.0));
+												painter.set_color(1.0);
+											},
+											JudgeType::TapAndFlick => {
+												painter.set_position(coner);
+												painter.rect(Vec2::same(16.0), Vec2::same(4.0));
+											},
+											JudgeType::AngledFilck(_) => {
+												painter.set_position(coner);
+												painter.set_stroke_width(2.0);
+												painter.set_color([0,0,0,0]);
+												painter.set_stroke_color(1.0);
+												painter.polygon(vec!(Vec2::x(8.0), Vec2::new(16.0, 8.0), Vec2::new(8.0, 16.0), Vec2::y(8.0)));
+												painter.set_stroke_width(0.0);
+												painter.set_color(1.0);
+											},
+											JudgeType::AngledTapFilck(_) => {
+												painter.set_position(coner);
+												painter.polygon(vec!(Vec2::x(8.0), Vec2::new(16.0, 8.0), Vec2::new(8.0, 16.0), Vec2::y(8.0)));
+											},
+											_ => {// TODO
+											},
+										}
+										painter.set_position(coner + Vec2::y(16.0));
+										painter.set_scale(Vec2::same(0.6));
+										painter.text(id.clone());
+										painter.set_scale(Vec2::same(1.0))
 									}
 
 									let current = (current_time.as_seconds_f32() / sustain_time) * width;
@@ -818,7 +853,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 					match &mut inner.current_linker {
 						AnimationLinker::Bezier(point1, point2) => {
 							let width = ui.window_area().width() - 32.0;
-							let res = ui.canvas(Vec2::same(width), |painter| {
+							let res = ui.add(Canvas::new(Vec2::same(width), |painter| {
 								painter.set_stroke_width(4.0);
 								painter.set_stroke_color(1.0);
 								painter.set_color([0,0,0,0]);
@@ -839,7 +874,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								painter.line(points[1]);
 								painter.set_position(points[3]);
 								painter.line(points[2] - points[3]);
-							});
+							}).dragable(true));
 							let cursor_position = ui.input().cursor_position().unwrap_or(Vec2::INF);
 							let (mut is_point1_draging, mut is_point2_draging) = if let Some((t1, t2)) = ui.memory_read(&res.id) {
 								(t1, t2)

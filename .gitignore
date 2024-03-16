@@ -2,3 +2,15 @@
 /shapoist_assets
 /dist
 Cargo.lock
+
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.so

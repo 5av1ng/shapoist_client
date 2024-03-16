@@ -8,14 +8,13 @@ edition = "2021"
 [dependencies]
 shapoist_request = { path = "../shapoist_request", features = ["client"] }
 shapoist_core = { path = "../shapoist_core" }
-nablo = { path = "../nablo", features = ["presets"] }
+nablo = { path = "../nablo" }
 nablo_shape = { path = "../nablo_shape" }
 log = "0.4.20"
 env_logger = "0.10.1"
 cfg-if = "1.0.0"
 anyhow = "1.0.79"
 utf8_slice = "1.0.0"
-rfd = "0.13.0"
 time = "0.3.34"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -29,22 +28,27 @@ web-sys = { version = "0.3.64", features = [
 	"Element",
 ]}
 
+[target.'cfg(target_os = "android")'.dependencies]
+android_logger = "0.13.1"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+rfd = "0.13.0"
+
+[features]
+default = []
+desktop = []
+
 [lib]
-crate-type = ["cdylib", "rlib"]
+name = "main"
+crate-type = ["cdylib"]
 
 [[bin]]
-path="src/lib.rs"
-name="shapoist_client"
+path = "src/lib.rs"
+name = "shapoist-client"
+required-features = ["desktop"]
 
 [profile.dev.package."*"]
 opt-level = 3
 
 [profile.release]
 debug = true
-
-[dev-dependencies]
-criterion = { version = "0.4", features = ["html_reports"] }
-
-[[bench]]
-name = "frames"
-harness = false

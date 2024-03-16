@@ -1,9 +1,10 @@
 use nablo::prelude::*;
 use anyhow::*;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
 use std::fs;
 
 pub enum Icon {
+	User,
 	Home,
 	Shop,
 	Setting,
@@ -15,7 +16,7 @@ pub enum Icon {
 }
 
 impl Icon {
-	#[cfg(not(target_arch = "wasm32"))]
+	#[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
 	pub fn init(ui: &mut Ui) -> Result<()> {
 		log::info!("inititialing icons...");
 		let path_read = fs::read_dir("./assets/icons")?;
@@ -35,7 +36,7 @@ impl Icon {
 		Ok(())
 	}
 
-	#[cfg(target_arch = "wasm32")]
+	#[cfg(any(target_arch = "wasm32", target_os = "android"))]
 	pub fn init(ui: &mut Ui) -> Result<()> {
 		ui.create_texture(include_bytes!("../assets/icons/add.png"), "add.png")?;
 		ui.create_texture(include_bytes!("../assets/icons/filter.png"), "filter.png")?;
@@ -59,6 +60,7 @@ impl Icon {
 			Self::Filter => painter.image("filter.png", size),
 			Self::More => painter.image("more.png", size),
 			Self::Edit => painter.image("edit.png", size),
+			Self::User => painter.image("user.png", size),
 		};
 	}
 }

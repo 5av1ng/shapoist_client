@@ -10,23 +10,29 @@ use nablo::prelude::*;
 use shapoist_core::system::core_structs::ShapoistCore;
 
 pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &mut ShapoistCore) {
-	let play_info = if let Some(t) = &core.play_info {
-		t
-	}else {
-		*router = Router::Main(MainRouter::default());
-		msg.message("play info failed to load", ui);
-		return;
-	};
-	if play_info.is_finished {
-		*router = Router::ResultPage;
-		return;
-	}
 	let (chart, info) = if let Some((t1,t2)) = &core.current_chart {
 		(t1, t2)
 	}else {
 		*router = Router::Main(MainRouter::default());
 		msg.message("no chart loaded", ui);
 		return;
+	};
+	let path = format!("{}/back.png", info.path.display());
+	let play_info = if let Some(t) = &core.play_info {
+		t
+	}else {
+		ui.delete_texture(path);
+		*router = Router::Main(MainRouter::default());
+		msg.message("play info failed to load", ui);
+		return;
+	};
+	if play_info.is_finished {
+		ui.delete_texture(path);
+		*router = Router::ResultPage;
+		return;
+	}
+	if let Err(e) = ui.create_texture_from_path(path.clone(), path.clone()) {
+		msg.message(format!("{}", e), ui);
 	};
 	let size = chart.size / chart.size.len();
 	let window = ui.window_area();
@@ -42,6 +48,8 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 		Err(_) => String::from("N/A"),
 	};
 	let res = ui.put(Canvas::new(canvas_size, |painter| {
+		painter.image(path.clone(), Vec2::new(info.image_size.0 as f32, info.image_size.1 as f32));
+		
 		for shape in &play_info.render_queue {
 			let mut shape = shape.shape.clone();
 			shape.pre_scale(scale_factor);
@@ -124,7 +132,7 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 	if res.is_multi_clicked(2) {
 		if input.cursor_position().unwrap_or(Vec2::INF).is_inside(Area::new(canvas_position, canvas_position + Vec2::same(32.0))) {
 			core.clear_play();
-			
+			ui.delete_texture(path);
 			*router = Router::Main(MainRouter::default());
 		}
 	}

@@ -18,8 +18,6 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 		msg.message(format!("{}", e), ui);
 	};
 	ui.put(Canvas::new(ui.window_area().width_and_height(), |painter| {
-		painter.set_color(ui.style().background_color);
-		painter.rect(ui.window_area().width_and_height(), Vec2::ZERO);
 		let image_size_after = image_size * Vec2::same(image_size.x / ui.window_area().width());
 		if image_size_after.x < ui.window_area().width() {
 			painter.set_position(Vec2::new((ui.window_area().width() - image_size_after.x) / 2.0, 0.0));
@@ -28,12 +26,12 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 			painter.set_position(Vec2::new(0.0, (ui.window_area().height() - image_size_after.y) / 2.0));
 		}
 		painter.set_scale(Vec2::same(image_size.x / ui.window_area().width()));
-		// painter.image(path.clone(), image_size);
+		painter.image(path.clone(), image_size);
 	}), ui.window_area());
 	ui.show(&mut Card::new("header").set_position(Vec2::same(16.0)).set_height(64.0).set_color([0,0,0,0]), |ui,_ |{
 		ui.horizental(|ui| {
 			if ui.button("back").is_clicked() {
-				ui.delete_texture(path);
+				ui.delete_texture(path.clone());
 				*router = Router::Main(MainRouter::default());
 			}
 			ui.horizental_inverse(|ui| {
@@ -46,6 +44,7 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 					if let Err(e) = core.edit() {
 						msg.message(format!("{}", e), ui);
 					}else {
+						ui.delete_texture(path.clone());
 						*router = Router::Edit(Default::default());
 					};
 				}
@@ -84,6 +83,7 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 						if let Err(e) = core.play(PlayMode::Normal) {
 							msg.message(format!("{}", e), ui);
 						}else {
+							ui.delete_texture(path);
 							*router = Router::PlayPage;
 						};
 					};

@@ -3,9 +3,9 @@ use shapoist_core::system::core_structs::ChartInfo;
 use crate::Router;
 use shapoist_core::system::core_structs::ShapoistCore;
 use crate::Icon;
-use nablo::prelude::shape_elements::Rect;
 use shapoist_core::system::core_structs::Settings;
 use nablo::prelude::*;
+#[cfg(not(target_os = "android"))]
 use rfd::FileDialog;
 
 #[macro_export] macro_rules! button_with_msg {
@@ -27,10 +27,7 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 	.set_width(96.0)
 	.set_rounding(Vec2::same(10.0)), |ui, _| {
 		if ui.put(SelectableValue::new(router.is_user(), "").icon(Vec2::same(64.0), |painter| {
-			painter.image_mask("user.png", Vec2::same(64.0), ShapeMask::Rect(Rect { 
-				width_and_height: Vec2::same(64.0), 
-				rounding: Vec2::same(32.0)
-			}));
+			Icon::User.draw(painter, Vec2::same(64.0))
 		}).set_padding(0.0), Area::new(ui.available_position(), ui.available_position() + Vec2::same(64.0))).is_clicked() {
 			*router = MainRouter::User(UserRouter::default()).into();
 		};
@@ -163,22 +160,28 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 					ui.add(SingleTextInput::new(&mut inner.producer).place_holder("producer").limit(64));
 					ui.add(SingleTextInput::new(&mut inner.charter).place_holder("charter").limit(64));
 					ui.add(SingleTextInput::new(&mut inner.artist).place_holder("artist").limit(64));
-					ui.horizental(|ui| {
-						if ui.button("select image").is_clicked() {
-							if let Some(t) = FileDialog::new().add_filter("image", &["png"]).set_directory("/").pick_file() {
-								inner.image_path = t
-							};
+					cfg_if::cfg_if! {
+						if #[cfg(target_os = "android")] {
+							ui.label("the chart create functions is not available on moblie devices");
+						}else {
+							ui.horizental(|ui| {
+								if ui.button("select image").is_clicked() {
+									if let Some(t) = FileDialog::new().add_filter("image", &["png"]).set_directory("/").pick_file() {
+										inner.image_path = t
+									};
+								}
+								ui.label(format!("{}", inner.image_path.display()));
+							});
+							ui.horizental(|ui| {
+								if ui.button("select track").is_clicked() {
+									if let Some(t) = FileDialog::new().add_filter("track", &["mp3"]).set_directory("/").pick_file() {
+										inner.track_path = t
+									};
+								}
+								ui.label(format!("{}", inner.track_path.display()));
+							});
 						}
-						ui.label(format!("{}", inner.image_path.display()));
-					});
-					ui.horizental(|ui| {
-						if ui.button("select track").is_clicked() {
-							if let Some(t) = FileDialog::new().add_filter("track", &["mp3"]).set_directory("/").pick_file() {
-								inner.track_path = t
-							};
-						}
-						ui.label(format!("{}", inner.track_path.display()));
-					});
+					}
 					let back = ui.horizental_inverse(|ui| -> bool {
 						let back = if ui.add(Button::new("create").icon(Vec2::same(16.0), |painter| {
 							painter.set_color(1.0);

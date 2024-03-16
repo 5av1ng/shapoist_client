@@ -28,6 +28,8 @@ pub struct Shapoist {
 	core: Option<Result<ShapoistCore, ShapoistError>>,
 	router: Router,
 	is_icon_inititialized: bool,
+	#[cfg(target_os = "android")]
+	android_app: AndroidApp
 }
 
 pub enum Router {
@@ -39,11 +41,22 @@ pub enum Router {
 }
 
 impl Shapoist {
+	#[cfg(not(target_os = "android"))]
 	pub fn init() -> Self {
 		Self {
 			core: None,
 			router: Router::Main(MainRouter::default()),
 			is_icon_inititialized: false,
+		}
+	}
+
+	#[cfg(target_os = "android")]
+	pub fn init(android_app: AndroidApp) -> Self {
+		Self {
+			core: None,
+			router: Router::Main(MainRouter::default()),
+			is_icon_inititialized: false,
+			android_app,
 		}
 	}
 }
@@ -61,7 +74,23 @@ impl App for Shapoist {
 				}
 			}
 			if let None = self.core {
-				self.core = Some(ShapoistCore::new("./"));
+				cfg_if::cfg_if! {
+					if #[cfg(target_os = "android")] {
+						use std::path::PathBuf;
+						
+						let path = format!("{}", self.android_app.external_data_path()
+							.unwrap_or(self.android_app.internal_data_path()
+								.unwrap_or(PathBuf::from("data/data/com.saving.shapoist")))
+							.display()
+						);
+						self.core = Some(ShapoistCore::new(&path));
+					}else if #[cfg(target_arch = "wasm32")] {
+						self.core = Some(Ok(ShapoistCore::minimal()));
+					}else {
+						self.core = Some(ShapoistCore::new("./"));
+					}
+				}
+				
 			}
 			let core = if let Some(t) = &mut self.core {
 				match t {
@@ -91,6 +120,7 @@ impl App for Shapoist {
 }
 
 #[cfg_attr(target_arch="wasm32", wasm_bindgen(start))]
+#[cfg(not(target_os = "android"))]
 fn run() {
 	cfg_if::cfg_if! {
 		if #[cfg(target_arch = "wasm32")] {
@@ -98,14 +128,14 @@ fn run() {
 			console_log::init_with_level(log::Level::Info).expect("az");
 		} else {
 			env_logger::Builder::new()
-			.filter(Some("shapoist_core::system::io_functions"), LevelFilter::Debug)
-			.filter(Some("shapoist_core::system::command"), LevelFilter::Debug)
-			.filter(Some("shapoist_core::system::core_functions"), LevelFilter::Info)
-			.filter(Some("shapoist_core::system::core_structs"), LevelFilter::Debug)
-			.filter(Some("shapoist_core::system::timer"), LevelFilter::Debug)
-			.filter(Some("nablo::ui"), LevelFilter::Debug)
-			.filter(Some("shapoist_client"), LevelFilter::Warn)
-			.init();
+				.filter(Some("shapoist_core::system::io_functions"), LevelFilter::Debug)
+				.filter(Some("shapoist_core::system::command"), LevelFilter::Debug)
+				.filter(Some("shapoist_core::system::core_functions"), LevelFilter::Info)
+				.filter(Some("shapoist_core::system::core_structs"), LevelFilter::Debug)
+				.filter(Some("shapoist_core::system::timer"), LevelFilter::Debug)
+				.filter(Some("nablo::ui"), LevelFilter::Debug)
+				.filter(Some("shapoist_client"), LevelFilter::Warn)
+				.init();
 		}
 	}
 	let _ = Manager::new_with_settings(Shapoist::init(), nablo::Settings {
@@ -115,6 +145,31 @@ fn run() {
 }
 
 #[allow(dead_code)]
+#[cfg(not(target_os = "android"))]
 fn main() {
 	run();
 }
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+fn android_main(app: AndroidApp) {
+	android_logger::init_once(
+		android_logger::Config::default().with_max_level(LevelFilter::Info)
+		.with_filter(android_logger::FilterBuilder::new()
+			.filter(Some("shapoist_core::system::io_functions"), LevelFilter::Debug)
+			.filter(Some("shapoist_core::system::command"), LevelFilter::Debug)
+			.filter(Some("shapoist_core::system::core_functions"), LevelFilter::Info)
+			.filter(Some("shapoist_core::system::core_structs"), LevelFilter::Debug)
+			.filter(Some("shapoist_core::system::timer"), LevelFilter::Debug)
+			.filter(Some("nablo::ui"), LevelFilter::Debug)
+			.filter(Some("shapoist_client"), LevelFilter::Warn)
+			.build()
+		),
+	);
+	
+	let _ = Manager::new_with_settings(Shapoist::init(app.clone()), nablo::Settings {
+		title: "Shapoist".into(),
+		..Default::default()
+	}, app).run();
+}
+
