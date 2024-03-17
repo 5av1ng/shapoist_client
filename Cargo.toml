@@ -16,6 +16,7 @@ cfg-if = "1.0.0"
 anyhow = "1.0.79"
 utf8_slice = "1.0.0"
 time = "0.3.34"
+pollster = "0.3.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook = "0.1.7"
@@ -44,7 +45,7 @@ crate-type = ["cdylib"]
 
 [[bin]]
 path = "src/lib.rs"
-name = "shapoist-client"
+name = "shapoist_client"
 required-features = ["desktop"]
 
 [profile.dev.package."*"]

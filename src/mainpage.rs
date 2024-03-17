@@ -5,8 +5,8 @@ use shapoist_core::system::core_structs::ShapoistCore;
 use crate::Icon;
 use shapoist_core::system::core_structs::Settings;
 use nablo::prelude::*;
-#[cfg(not(target_os = "android"))]
-use rfd::FileDialog;
+#[cfg(not(any(target_os = "android", target_arch = "wasm32")))]
+use rfd::AsyncFileDialog;
 
 #[macro_export] macro_rules! button_with_msg {
 	($n: expr, $t: expr, $ui: expr, $msg: expr) => {
@@ -163,19 +163,21 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 					cfg_if::cfg_if! {
 						if #[cfg(target_os = "android")] {
 							ui.label("the chart create functions is not available on moblie devices");
+						}else if #[cfg(target_arch = "wasm32")] {
+							ui.label("the chart create functions is not available on web platfrom");
 						}else {
 							ui.horizental(|ui| {
 								if ui.button("select image").is_clicked() {
-									if let Some(t) = FileDialog::new().add_filter("image", &["png"]).set_directory("/").pick_file() {
-										inner.image_path = t
+									if let Some(t) = pollster::block_on(AsyncFileDialog::new().add_filter("image", &["png"]).set_directory("/").pick_file()) {
+										inner.image_path = t.into()
 									};
 								}
 								ui.label(format!("{}", inner.image_path.display()));
 							});
 							ui.horizental(|ui| {
 								if ui.button("select track").is_clicked() {
-									if let Some(t) = FileDialog::new().add_filter("track", &["mp3"]).set_directory("/").pick_file() {
-										inner.track_path = t
+									if let Some(t) = pollster::block_on(AsyncFileDialog::new().add_filter("track", &["mp3"]).set_directory("/").pick_file()) {
+										inner.track_path = t.into()
 									};
 								}
 								ui.label(format!("{}", inner.track_path.display()));

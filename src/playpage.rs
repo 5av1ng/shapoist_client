@@ -31,6 +31,7 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 		*router = Router::ResultPage;
 		return;
 	}
+	#[cfg(not(target_arch = "wasm32"))]
 	if let Err(e) = ui.create_texture_from_path(path.clone(), path.clone()) {
 		msg.message(format!("{}", e), ui);
 	};

@@ -7,7 +7,7 @@ a simple client for `Shapoist`
 
 on desktop platform
 ```sh
-cargo run
+cargo run --features desktop
 ```
 on android platform
 ```sh
@@ -18,7 +18,7 @@ cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build
 on wasm platform
 note: you need install [trunk](https://trunkrs.dev/) first
 ```sh
-trunk serve
+trunk serve --features desktop
 ```
 
 #### Releasing
@@ -33,5 +33,5 @@ cargo ndk -t arm64-v8a -o app/src/main/jniLibs/ build --release
 ```
 on wasm platform
 ```sh
-trunk build --release
+trunk build --features desktop --release
 ```

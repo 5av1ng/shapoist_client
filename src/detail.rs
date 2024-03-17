@@ -14,6 +14,7 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 		return;
 	};
 	let path = format!("{}/back.png", info.path.display());
+	#[cfg(not(target_arch = "wasm32"))]
 	if let Err(e) = ui.create_texture_from_path(path.clone(), path.clone()) {
 		msg.message(format!("{}", e), ui);
 	};

@@ -2432,6 +2432,7 @@ dependencies = [
  "log",
  "nablo",
  "nablo_shape",
+ "pollster",
  "rfd",
  "shapoist_core",
  "shapoist_request",
