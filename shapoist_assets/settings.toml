@@ -10,5 +10,5 @@ command_history = 30
 secs = 43200
 nanos = 0
 
-[offcet]
-time = -260.0
+[offset]
+time = -600.0

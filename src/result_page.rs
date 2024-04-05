@@ -33,7 +33,7 @@ pub fn result_page(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, 
 		ui.label("Score");
 		ui.add(Label::new(format!("{:0width$}", play_info.score, width = 7)).set_scale(Vec2::same(2.0)));
 		ui.label("Accuracy");
-		ui.add(Label::new(format!("{:.2}%", play_info.accuracy)).set_scale(Vec2::same(2.0)));
+		ui.add(Label::new(format!("{:.2}%", play_info.accuracy * 1e2)).set_scale(Vec2::same(2.0)));
 		ui.label(format!("Max Combo: {}", play_info.max_combo));
 		ui.label(format!("Immaculate: {}, Extra: {}, Normal: {}, Fade: {}, Miss: {}", judge_info[0], judge_info[1], judge_info[2], judge_info[3], judge_info[4]));
 		ui.label(&info.song_name);

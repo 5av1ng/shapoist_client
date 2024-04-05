@@ -49,6 +49,14 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 						*router = Router::Edit(Default::default());
 					};
 				}
+				if ui.button("delete").is_multi_clicked(2) {
+					if let Err(e) = core.delete_current_chart() {
+						msg.message(format!("{}", e), ui);
+					}else {
+						ui.delete_texture(path.clone());
+						*router = Router::Main(Default::default());
+					};
+				}
 			});
 		});
 	});

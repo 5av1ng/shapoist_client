@@ -44,10 +44,7 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 	};
 	let canvas_position = window.center() - canvas_size / 2.0;
 	let scale_factor = canvas_size.x / chart.size.x;
-	let time = match core.timer.read() {
-		Ok(t) => format!("{:.2}s", (t - Duration::seconds(3)).as_seconds_f32()),
-		Err(_) => String::from("N/A"),
-	};
+	let time = format!("{:.2}s", (core.timer.read() - Duration::seconds(3)).as_seconds_f32());
 	let res = ui.put(Canvas::new(canvas_size, |painter| {
 		painter.image(path.clone(), Vec2::new(info.image_size.0 as f32, info.image_size.1 as f32));
 		
@@ -64,9 +61,9 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 		let score_area = painter.text_area(score.clone());
 		painter.set_position(Vec2::new(canvas_size.x , 0.0) + Vec2::new(- 16.0 - score_area.width(), 16.0));
 		painter.text(score);
-		let acc_area = painter.text_area(format!("{:.2}%", play_info.accuracy));
+		let acc_area = painter.text_area(format!("{:.2}%", play_info.accuracy * 1e2));
 		painter.set_position(Vec2::new(canvas_size.x , 0.0) + Vec2::new(- 16.0 - acc_area.width(), 32.0 + score_area.height()));
-		painter.text(format!("{:.2}%", play_info.accuracy));
+		painter.text(format!("{:.2}%", play_info.accuracy * 1e2));
 		let time_area = painter.text_area(time.clone());
 		painter.set_position(Vec2::new(canvas_size.x , 0.0) + Vec2::new(- 16.0 - time_area.width(), 48.0 + score_area.height() + acc_area.height()));
 		painter.text(time);
