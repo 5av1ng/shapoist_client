@@ -57,6 +57,9 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 						*router = Router::Main(Default::default());
 					};
 				}
+				if let Router::Detail { is_auto } = router {
+					ui.switch(is_auto, "auto");
+				}
 			});
 		});
 	});
@@ -89,12 +92,23 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 				ui.add(Label::new(play_history.high_accurcy.to_string()).set_scale(Vec2::same(2.0)));
 				ui.horizental_inverse(|ui| {
 					if ui.button("start").is_clicked() {
-						if let Err(e) = core.play(PlayMode::Normal) {
-							msg.message(format!("{}", e), ui);
-						}else {
-							ui.delete_texture(path);
-							*router = Router::PlayPage;
-						};
+						if let Router::Detail { is_auto } = router {
+							if *is_auto {
+								if let Err(e) = core.play(PlayMode::Auto) {
+									msg.message(format!("{}", e), ui);
+								}else {
+									ui.delete_texture(path);
+									*router = Router::PlayPage;
+								};
+							}else {
+								if let Err(e) = core.play(PlayMode::Normal) {
+									msg.message(format!("{}", e), ui);
+								}else {
+									ui.delete_texture(path);
+									*router = Router::PlayPage;
+								};
+							}
+						}
 					};
 				});
 			});

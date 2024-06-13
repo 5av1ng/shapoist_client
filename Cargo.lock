@@ -2685,6 +2685,7 @@ dependencies = [
  "log",
  "nablo_data",
  "nablo_shape",
+ "once_cell",
  "rand",
  "serde",
  "shapoist_request",

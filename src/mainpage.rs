@@ -1,3 +1,7 @@
+use time::Duration;
+use shapoist_core::system::core_structs::JudgeEvent;
+use shapoist_core::system::core_structs::Click;
+use shapoist_core::system::core_structs::ClickState;
 use std::path::PathBuf;
 use shapoist_core::system::core_structs::ChartInfo;
 use crate::Router;
@@ -50,7 +54,9 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 			if ui.put(SelectableValue::new(router.is_setting(), "").icon(Vec2::same(64.0), |painter| {
 				Icon::Setting.draw(painter, Vec2::same(64.0))
 			}).set_padding(0.0), Area::new(ui.available_position(), ui.available_position() + Vec2::same(64.0))).is_clicked() {
-				*router = MainRouter::Setting(SettingRouter {}).into();
+				*router = MainRouter::Setting(SettingRouter {
+					is_in_adjustment: false
+				}).into();
 			};
 		});
 	});
@@ -109,7 +115,7 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 						if let Err(e) = core.read_chart(t) {
 							msg.message(format!("{}", e), ui);
 						}else {
-							*router = Router::Detail;
+							*router = Router::Detail { is_auto: false };
 						}
 					}
 				};
@@ -141,18 +147,99 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 					ui.label("coming soon");
 				});
 			},
-			Router::Main(MainRouter::Setting(_)) => { 
-				ui.show(&mut Card::new("settings").set_color(ui.style().background_color.brighter(0.1)).set_scrollable([true; 2]).set_rounding(Vec2::same(10.0)), |ui, _| {
-					if let Err(e) = settings(&mut core.settings, "shapoist settings", ui) {
-						ui.label(format!("error: {}", e));
+			Router::Main(MainRouter::Setting(setting_router)) => {
+				ui.horizental(|ui| {
+					if ui.switch(&mut !setting_router.is_in_adjustment, "settings").is_clicked() {
+						setting_router.is_in_adjustment = !setting_router.is_in_adjustment;
 					};
-					button_with_msg!("save", core.settings_are_changed(), ui, msg);
-					button_with_msg!("reload resource", core.reload_all(), ui, msg);
-					button_with_msg!("check", core.chart_list[0].check(), ui, msg);
-					if ui.button("reset").is_clicked() {
-						core.settings = Settings::default();
-					}
+					ui.switch(&mut setting_router.is_in_adjustment, "delay adjustment");
 				});
+				if setting_router.is_in_adjustment{
+					ui.label("click when kick hits");
+					ui.label(format!("timer: {}ms", (core.timer.read() - Duration::seconds(3)).as_seconds_f32() * 1e3));
+					ui.label(format!("current delay: {}ms", core.settings.offset.as_seconds_f32() * 1e3));
+					let (average, variance) = core.current_delay();
+					ui.label(format!("average: {:.2}ms, variance: {:.2}",average.as_seconds_f32() * 1e3 , variance));
+					if ui.button("start").is_clicked() {
+						if let Err(e) = core.start_delay_adjustment() {
+							msg.message(format!("{}", e), ui);
+						}
+					}
+					if ui.button("apply").is_clicked() {
+						core.settings.offset = average;
+						if let Err(e) = core.settings_are_changed() {
+							msg.message(format!("{}", e), ui);
+						}
+					}
+					if ui.button("+500ms").is_clicked() {
+						core.settings.offset = core.settings.offset + Duration::milliseconds(500);
+						if let Err(e) = core.settings_are_changed() {
+							msg.message(format!("{}", e), ui);
+						}
+					}
+					if ui.button("-500ms").is_clicked() {
+						core.settings.offset = core.settings.offset - Duration::milliseconds(500);
+						if let Err(e) = core.settings_are_changed() {
+							msg.message(format!("{}", e), ui);
+						}
+					}
+					if core.timer.is_started() {
+						let mut clicks = vec!();
+						let input = ui.input();
+						for touch in input.touches() {
+							clicks.push(Click {
+								id: touch.id,
+								position: touch.position,
+								state: match touch.phase {
+									TouchPhase::Start => ClickState::Pressed,
+									TouchPhase::Hold => ClickState::Pressing,
+									TouchPhase::End => ClickState::Released,
+								}
+							});
+						}
+						let cursor_position = input.cursor_position().unwrap_or(Vec2::INF);
+						if input.is_any_mouse_pressed() {
+							clicks.push(Click {
+								id: 999,
+								position: cursor_position,
+								state: ClickState::Pressed,
+							});
+						}else if input.is_any_mouse_pressing() {
+							clicks.push(Click {
+								id: 999,
+								position: cursor_position,
+								state: ClickState::Pressing,
+							});
+						}else if input.is_any_mouse_released() {
+							clicks.push(Click {
+								id: 999,
+								position: cursor_position,
+								state: ClickState::Released,
+							});
+						}
+						let judge_event = JudgeEvent {
+							clicks,
+						};
+
+						if let Err(e) = core.delay_adjustment_judge(judge_event) {
+							msg.message(format!("{}", e), ui);
+						}
+					}
+					
+				}else {
+					ui.show(&mut Card::new("settings").set_color(ui.style().background_color.brighter(0.1)).set_scrollable([true; 2]).set_rounding(Vec2::same(10.0)), |ui, _| {
+						if let Err(e) = settings(&mut core.settings, "shapoist settings", ui) {
+							ui.label(format!("error: {}", e));
+						};
+						button_with_msg!("save", core.settings_are_changed(), ui, msg);
+						button_with_msg!("reload resource", core.reload_all(), ui, msg);
+						button_with_msg!("check", core.chart_list[0].check(), ui, msg);
+						if ui.button("reset").is_clicked() {
+							core.settings = Settings::default();
+						}
+					});
+				}
+				
 			},
 			Router::Main(MainRouter::Edit(inner)) => {
 				if let Some(t) = ui.show(&mut Card::new("umm").set_color(ui.style().background_color.brighter(0.1)).set_scrollable([true; 2]).set_rounding(Vec2::same(16.0)), |ui, _| -> bool {
@@ -263,7 +350,9 @@ pub struct UserRouter {
 }
 
 #[derive(Default)]
-pub struct SettingRouter {}
+pub struct SettingRouter {
+	is_in_adjustment: bool
+}
 
 #[derive(Default)]
 pub struct EditRouter {

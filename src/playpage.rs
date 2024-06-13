@@ -102,24 +102,28 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 		});
 	}
 	let cursor_position = input.cursor_position().unwrap_or(Vec2::INF) * scale_factor;
-	if input.is_any_mouse_pressed() {
-		clicks.push(Click {
-			id: 999,
-			position: cursor_position,
-			state: ClickState::Pressed,
-		});
-	}else if input.is_any_mouse_pressing() {
-		clicks.push(Click {
-			id: 999,
-			position: cursor_position,
-			state: ClickState::Pressing,
-		});
-	}else if input.is_any_mouse_released() {
-		clicks.push(Click {
-			id: 999,
-			position: cursor_position,
-			state: ClickState::Released,
-		});
+	cfg_if::cfg_if! {
+		if #[cfg(all(not(target_os = "android"), not(target_arch = "wasm32")))] {
+			if input.is_any_mouse_pressed() {
+				clicks.push(Click {
+					id: 999,
+					position: cursor_position,
+					state: ClickState::Pressed,
+				});
+			}else if input.is_any_mouse_released() {
+				clicks.push(Click {
+					id: 999,
+					position: cursor_position,
+					state: ClickState::Released,
+				});
+			}else {
+				clicks.push(Click {
+					id: 999,
+					position: cursor_position,
+					state: ClickState::Pressing,
+				})
+			}
+		}
 	}
 	let judge_event = JudgeEvent {
 		clicks,

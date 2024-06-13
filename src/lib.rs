@@ -34,7 +34,9 @@ pub struct Shapoist {
 
 pub enum Router {
 	Main(MainRouter),
-	Detail,
+	Detail {
+		is_auto: bool,
+	},
 	PlayPage,
 	ResultPage,
 	Edit(EditRouter)
@@ -99,7 +101,7 @@ impl App for Shapoist {
 			};
 			match &mut self.router {
 				Router::Main(_) => mainpage(&mut self.router, ui, msg, core),
-				Router::Detail => detail(&mut self.router, ui, msg, core),
+				Router::Detail{ .. } => detail(&mut self.router, ui, msg, core),
 				Router::PlayPage => playpage(&mut self.router, ui, msg, core),
 				Router::ResultPage => result_page(&mut self.router, ui, msg, core),
 				Router::Edit(_) => edit(&mut self.router, ui, msg, core),
