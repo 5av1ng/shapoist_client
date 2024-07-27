@@ -1,3 +1,6 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![allow(clippy::blocks_in_conditions)]
+
 #[cfg(not(target_arch = "wasm32"))]
 use log::*;
 use nablo::prelude::shape_elements::Layer;
@@ -39,7 +42,7 @@ pub enum Router {
 	},
 	PlayPage,
 	ResultPage,
-	Edit(EditRouter)
+	Edit(Box<EditRouter>)
 }
 
 impl Shapoist {
@@ -66,7 +69,7 @@ impl App for Shapoist {
 					}
 				}
 			}
-			if let None = self.core {
+			if self.core.is_none() {
 				cfg_if::cfg_if! {
 					if #[cfg(target_os = "android")] {
 						use std::path::PathBuf;

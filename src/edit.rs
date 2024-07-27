@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+use rayon::slice::ParallelSliceMut;
 use shapoist_core::system::core_structs::Chart;
 use shapoist_core::system::core_structs::JudgeField;
 use shapoist_core::system::core_structs::PlayMode;
@@ -25,13 +27,13 @@ macro_rules! add_window {
 }
 
 pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &mut ShapoistCore) {
-	if let Some(_) = &core.play_info {
+	if core.play_info.is_some() {
 	} else {
 		msg.message("no chart loaded", ui);
 		*router = Router::Main(Default::default());
 		return;
 	};
-	if let Some(_) = &core.current_chart {} else {
+	if core.current_chart.is_some() {} else {
 		msg.message("no chart loaded", ui);
 		*router = Router::Main(Default::default());
 		return;
@@ -43,17 +45,31 @@ pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &
 	};
 
 	if ui.input().is_key_released(Key::Space) {
-		if let Err(e) = if core.timer.is_started() {
-			core.pause()
-		}else {
-			core.play_with_time(PlayMode::Auto, inner.current_time)
-		} {
+		if core.timer.is_started() {
+			if let Err(e) = core.refresh_play_info() {
+				if let Err(e) = core.play(PlayMode::Auto) {
+					msg.message(format!("{}", e), ui);
+				}else {
+					if let Err(e) = core.pause() {
+						msg.message(format!("{}", e), ui);
+					}
+					msg.message(format!("{}", e), ui);
+				}
+			}
+			core.timer.set_to(inner.time_pointer + Duration::seconds_f32(3.0));
+			if let Err(e) = core.update_render_queue(false) {
+				msg.message(format!("{}", e), ui);
+			};
+			if let Err(e) = core.pause() {
+				msg.message(format!("{}", e), ui);
+			}
+		}else if let Err(e) = core.play_with_time(PlayMode::Auto, inner.current_time) {
 			msg.message(format!("{}", e), ui);
 		}
 	}
 
 	if let Some((_, info)) = &core.current_chart {
-		let sustain_time = info.sustain_time.clone(); 
+		let sustain_time = info.sustain_time; 
 		let beats = info.total_beats();
 		let beat_quator = (inner.time_baseline as f32).powf(((1.0 / inner.timeline_scale_factor).log(inner.time_baseline as f32)).floor());
 		let beats = beats / beat_quator;
@@ -63,42 +79,34 @@ pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &
 				let mut sec = input.as_seconds_f32();
 				if ui.input().is_key_pressing(Key::AltLeft) {
 					if ui.input().is_key_pressing(Key::ArrowLeft) {
-						sec = sec - 0.1
+						sec -= 0.1
 					}
-				}else {
-					if ui.input().is_key_released(Key::ArrowLeft) {
-						sec = sec - 0.1
-					}
+				}else if ui.input().is_key_released(Key::ArrowLeft) {
+					sec -= 0.1
 				}
 				if ui.input().is_key_pressing(Key::AltLeft) {
 					if ui.input().is_key_pressing(Key::ArrowRight) {
-						sec = sec + 0.1
+						sec += 0.1
 					}
-				}else {
-					if ui.input().is_key_released(Key::ArrowRight) {
-						sec = sec + 0.1
-					}
+				}else if ui.input().is_key_released(Key::ArrowRight) {
+					sec += 0.1
 				}
 				*input = Duration::seconds_f32(sec);
 			}else {
 				let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 				if ui.input().is_key_pressing(Key::AltLeft) {
 					if ui.input().is_key_pressing(Key::ArrowLeft) {
-						sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+						sustain_beats = sustain_beats.saturating_sub(1);
 					}
-				}else {
-					if ui.input().is_key_released(Key::ArrowLeft) {
-						sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
-					}
+				}else if ui.input().is_key_released(Key::ArrowLeft) {
+					sustain_beats = sustain_beats.saturating_sub(1);
 				}
 				if ui.input().is_key_pressing(Key::AltLeft) {
 					if ui.input().is_key_pressing(Key::ArrowRight) {
-						sustain_beats = sustain_beats + 1;
+						sustain_beats += 1;
 					}
-				}else {
-					if ui.input().is_key_released(Key::ArrowRight) {
-						sustain_beats = sustain_beats + 1;
-					}
+				}else if ui.input().is_key_released(Key::ArrowRight) {
+					sustain_beats += 1;
 				}
 				*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 			}
@@ -183,6 +191,86 @@ pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &
 
 		back
 	}).return_value {
+		let mut info = MacroInner::from_router(inner);
+		for (code, macro_use) in inner.macro_map.values_mut() {
+			let info_back_up = info.clone();
+			code.backend(&mut info, macro_use, msg, core);
+			if info != info_back_up {
+				inner.paste_offset = info.paste_offset;
+				inner.current_time = info.current_time;
+				inner.time_pointer = info.time_pointer;
+				inner.is_adsorption = info.is_adsorption;
+				inner.round = info.round;
+			}
+		}
+
+		if inner.is_something_changed || inner.grouper.need_sync {
+			for (father_id, child_ids) in &inner.grouper.group {
+				if let Some((chart, _)) = &mut core.current_chart {
+					let animation = match father_id {
+						Select::JudgeField(id) => {
+							if let Some(judge_field) = &mut chart.judge_fields.get(id) {
+								judge_field.animation.clone()
+							}else {
+								continue;
+							}
+						},
+						Select::Shape(id) => {
+							if let Some(shape) = &mut chart.shapes.get(id) {
+								shape.animation.clone()
+							}else {
+								continue;
+							}
+						},
+						_ => continue,
+
+					};
+					for (child_id, offset, attribute) in child_ids {
+						let processed_animation = if let Some(animation) = animation.get(attribute) {
+							animation.move_by(*offset)
+						}else {
+							continue
+						};
+						match child_id {
+							Select::JudgeField(id) => {
+								if let Some(judge_field) = &mut chart.judge_fields.get_mut(id) {
+									judge_field.animation.insert(attribute.to_string(), processed_animation);
+								}
+							},
+							Select::Shape(id) => {
+								if let Some(shape) = &mut chart.shapes.get_mut(id) {
+									shape.animation.insert(attribute.to_string(), processed_animation);
+								}
+							},
+							_ => continue,
+						}
+					}
+				}
+			}
+			inner.grouper.need_sync = false;
+		}
+
+		if inner.is_something_changed {
+			if let Err(e) = core.refresh_play_info() {
+				if let Err(e) = core.play(PlayMode::Auto) {
+					msg.message(format!("{}", e), ui);
+				}else {
+					if let Err(e) = core.pause() {
+						msg.message(format!("{}", e), ui);
+					}
+					msg.message(format!("{}", e), ui);
+				}
+			}
+			core.timer.set_to(inner.time_pointer + Duration::seconds_f32(3.0));
+			if let Err(e) = core.update_render_queue(false) {
+				msg.message(format!("{}", e), ui);
+			};
+			if let Err(e) = core.pause() {
+				msg.message(format!("{}", e), ui);
+			}
+		}
+
+		inner.is_something_changed = false;
 		if t1 {
 			core.clear_play();
 			core.clear_edit();
@@ -199,6 +287,8 @@ pub fn edit(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core: &
 }
 
 pub struct EditRouter {
+	is_something_changed: bool,
+
 	filter: Duration,
 	paste_offset: Duration,
 	need_scroll_to_now: bool,
@@ -211,10 +301,12 @@ pub struct EditRouter {
 	is_show_id: bool,
 
 	is_timeline_on: bool,
+	current_animation_editing: Option<Select>,
+	is_changing_to_other_select: bool,
 	timeline_scale_factor: f32,
 	time_baseline: usize,
 	is_adsorption: bool,
-	current_animation_id: String,
+	current_animation_attribute: String,
 	round: isize,
 	current_linker: AnimationLinker,
 	is_animation_delete: bool,
@@ -224,6 +316,7 @@ pub struct EditRouter {
 	is_detail_on: bool,
 
 	is_arrangement_on: bool,
+	current_judge_field: Option<String>,
 	is_show_note_id: bool,
 	default_click_effect_center: Vec2,
 	note_type: JudgeType,
@@ -241,7 +334,9 @@ pub struct EditRouter {
 	/// this will be user accessible in future, maybe based on lua
 	/// for now, just use build-ins.
 	macro_map: HashMap<String, (MacroCode, MacroInfo)>,
-	note_generator: NoteGenerator
+	note_generator: NoteGenerator,
+	grouper: Grouper,
+	switcher: Switcher,
 }
 
 #[derive(Default)]
@@ -252,6 +347,18 @@ struct NoteGenerator {
 	time_range: Duration,
 }
 
+#[derive(Default)]
+struct Grouper {
+	group: HashMap<Select, Vec<(Select, f32, String)>>,
+	need_sync: bool,
+}
+
+#[derive(Default)]
+struct Switcher {
+	current_attributes: HashSet<String>,
+	to_switch: [Option<Select>; 2],
+}
+
 #[derive(Clone, PartialEq)]
 pub struct MacroInner {
 	pub paste_offset: Duration,
@@ -259,16 +366,18 @@ pub struct MacroInner {
 	pub time_pointer: Duration,
 	pub is_adsorption: bool,
 	pub round: isize,
+	pub is_something_changed: bool,
 }
 
 impl MacroInner {
 	fn from_router(router: &EditRouter) -> Self {
 		Self {
-			paste_offset: router.paste_offset.clone(),
-			current_time: router.current_time.clone(),
-			time_pointer: router.time_pointer.clone(),
-			is_adsorption: router.is_adsorption.clone(),
-			round: router.round.clone(),
+			paste_offset: router.paste_offset,
+			current_time: router.current_time,
+			time_pointer: router.time_pointer,
+			is_adsorption: router.is_adsorption,
+			round: router.round,
+			is_something_changed: router.is_something_changed,
 		}
 	}
 }
@@ -280,6 +389,7 @@ pub struct MacroCode {
 
 impl Macro for MacroCode {
 	fn ui(&mut self, _: &mut MacroInner, _: &mut MacroInfo, _: &mut Ui, _: &mut MessageProvider, _: &mut ShapoistCore) {}
+	fn backend(&mut self, _: &mut MacroInner, _: &mut MacroInfo, _: &mut MessageProvider, _: &mut ShapoistCore) {}
 }
 
 pub struct MacroInfo {
@@ -288,11 +398,14 @@ pub struct MacroInfo {
 
 pub trait Macro {
 	fn ui(&mut self, inner: &mut MacroInner, info: &mut MacroInfo, ui: &mut Ui, msg: &mut MessageProvider, core: &mut ShapoistCore);
+	fn backend(&mut self, inner: &mut MacroInner, info: &mut MacroInfo, msg: &mut MessageProvider, core: &mut ShapoistCore);
 }
 
 impl Default for EditRouter {
 	fn default() -> Self {
 		Self {
+			is_something_changed: false,
+
 			filter: Duration::MAX,
 			paste_offset: Duration::ZERO,
 			need_scroll_to_now: false,
@@ -305,10 +418,12 @@ impl Default for EditRouter {
 			is_show_id: true,
 
 			is_timeline_on: false,
+			current_animation_editing: None,
+			is_changing_to_other_select: false,
 			timeline_scale_factor: 1.0,
 			time_baseline: 2,
 			is_adsorption: true,
-			current_animation_id: String::new(),
+			current_animation_attribute: String::new(),
 			round: -2,
 			current_linker: AnimationLinker::Bezier(Vec2::new(0.5,0.1), Vec2::new(0.5,0.9)),
 			is_animation_delete: false,
@@ -318,6 +433,7 @@ impl Default for EditRouter {
 			is_detail_on: false,
 
 			is_arrangement_on: false,
+			current_judge_field: None,
 			is_show_note_id: false,
 			default_click_effect_center: Vec2::ZERO,
 			note_type: JudgeType::Tap,
@@ -333,6 +449,8 @@ impl Default for EditRouter {
 			is_macro_on: false,
 			macro_map: HashMap::new(),
 			note_generator: Default::default(),
+			grouper: Default::default(),
+			switcher: Default::default(),
 		}
 	}
 }
@@ -348,10 +466,18 @@ pub enum EditInner {
 	Macro
 }
 
-fn preview(inner: &mut EditRouter, ui: &mut Ui, _: &mut MessageProvider, core: &mut ShapoistCore, position: Vec2) -> InnerResponse<()> {
-	let play_info = core.play_info.as_ref().unwrap();
-	let (chart, _) = &core.current_chart.as_ref().unwrap();
-	let size = chart.size / chart.size.len();
+fn preview(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: &mut ShapoistCore, position: Vec2) -> InnerResponse<()> {
+	let mut selects = match core.current_selects() {
+		Ok(t) => t,
+		Err(e) => {
+			msg.message(format!("{:?}", e), ui);
+			return ui.card("preview", Vec2::same(1.0), |_, _| {});
+		}
+	};
+	let (chart_size, size) = { 
+		let (chart, _) = core.current_chart.as_ref().unwrap();
+		(chart.size.x, chart.size / chart.size.len())
+	};
 	let canvas_size = size * 400.0;
 	let fps = format!("{:.2}fps", 1.0 / ui.delay().as_seconds_f32());
 	ui.show(&mut Card::new("preview")
@@ -361,8 +487,6 @@ fn preview(inner: &mut EditRouter, ui: &mut Ui, _: &mut MessageProvider, core: &
 		.set_height(canvas_size.y + 32.0)
 		.set_width(canvas_size.x + 32.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([true; 2]), 
 		|ui, _| {
@@ -372,25 +496,38 @@ fn preview(inner: &mut EditRouter, ui: &mut Ui, _: &mut MessageProvider, core: &
 			}else {
 				window.height() * size
 			};
-			let scale_factor = canvas_size.x / chart.size.x;
+			let scale_factor = canvas_size.x / chart_size;
 			let canvas_position = window.center() - canvas_size / 2.0;
 			let time = format!("{:.2}s", (core.timer.read() - Duration::seconds(3)).as_seconds_f32());
-			ui.put(Canvas::new(canvas_size, |painter| {
-				painter.set_color(0.0);
-				painter.rect(canvas_size, Vec2::ZERO);
-				for shape in &play_info.render_queue {
-					painter.set_color(1.0);
-					let shape_id = &shape.id;
-					let mut shape = shape.shape.clone();
-					shape.pre_scale(scale_factor);
-					let id_position = shape.get_area().right_bottom();
-					painter.push(shape);
-					painter.set_scale(Vec2::same(0.75));
-					if inner.is_show_id {
-						painter.set_position(id_position);
-						painter.text(shape_id.to_string());
+			let mut areas = HashMap::new();
+			let canvas_response = ui.put(Canvas::new(canvas_size, |painter| {
+				if let Some(play_info) = &core.play_info {
+					painter.set_color(0.0);
+					painter.rect(canvas_size, Vec2::ZERO);
+					for shape in &play_info.render_queue {
+						painter.set_color(1.0);
+						let shape_id = &shape.id;
+						let mut shape = shape.shape.clone();
+						shape.pre_scale(scale_factor);
+						let shape_area = shape.get_area();
+						let id_position = shape_area.right_bottom();
+						if selects.contains(&Select::Shape(shape_id.to_string())) {
+							let mut stroke_shape = shape.clone();
+							stroke_shape.style.fill = [0,0,0,0].into();
+							stroke_shape.style.stroke_width += 3.0;
+							stroke_shape.style.stroke_color = [1.0, 0.0, 0.0, 1.0].into();
+							painter.push(stroke_shape);
+						}
+						areas.insert(shape_id.to_string(), shape_area);
+						painter.push(shape);
+						painter.set_scale(Vec2::same(0.75));
+						if inner.is_show_id {
+							painter.set_position(id_position);
+							painter.text(shape_id.to_string());
+						}
 					}
 				}
+				painter.set_color(1.0);
 				painter.set_scale(Vec2::same(1.0));
 				painter.set_position(Vec2::same(16.0));
 				painter.text("preview".to_string());
@@ -398,7 +535,69 @@ fn preview(inner: &mut EditRouter, ui: &mut Ui, _: &mut MessageProvider, core: &
 				painter.text(time);
 				painter.set_position(Vec2::new(16.0, 48.0));
 				painter.text(fps);
-			}), Area::new(canvas_position, canvas_position + canvas_size));
+			}).dragable(true), Area::new(canvas_position, canvas_position + canvas_size));
+			if canvas_response.is_clicked() {
+				let mut select_to_add = vec!();
+				let mouse_position = ui.input().cursor_position().unwrap_or(Vec2::INF) - canvas_position;
+				// println!("{:?},  {:?}", mouse_position,  ui.window_area().left_top());
+				let mut is_click_outside = true; 
+				for (id, area) in areas {
+					// println!("{:?}", area.left_top());
+					if area.is_point_inside(&mouse_position) {
+						// println!("{:?}", id);
+						is_click_outside = false;
+						select_to_add.push(Select::Shape(id));
+					}
+				}
+				let mut select_to_delete = select_to_add.clone();
+				select_to_delete.retain(|inner| selects.contains(inner));
+				if ui.input().is_key_pressing(Key::ControlLeft) {
+					selects.append(&mut select_to_add);
+				}else if !select_to_add.is_empty() {
+					selects = select_to_add;
+				}
+				selects.retain(|inner| !select_to_delete.contains(inner));
+				if let Err(e) = core.multi_select(selects.clone()) {
+					msg.message(format!("{}", e), ui);
+				}
+				if is_click_outside && !ui.input().is_key_pressing(Key::ControlLeft) {
+					if let Err(e) = core.clear_selects() {
+						msg.message(format!("{}", e), ui);
+					}
+				}
+			};
+			let drag_delta = canvas_response.drag_delta();
+			if drag_delta != Vec2::ZERO {
+				// println!("{:?}", drag_delta);
+				let x_animation = String::from("----Shape----style----position----x");
+				let y_animation = String::from("----Shape----style----position----y");
+				for select in &selects {
+					if let Select::Shape(id) = select {
+						if let Some((chart, _)) = &mut core.current_chart{
+							if let Some(shape) = chart.shapes.get_mut(id) {
+								// if ui.input().is_key_pressing(Key::ShiftLeft) {
+								// 	if drag_delta.x > drag_delta.y {
+								// 		drag_delta.y = 0.0;
+								// 	}else {
+								// 		drag_delta.x = 0.0;
+								// 	}
+								// }
+								if let Some(animation) = shape.animation.get_mut(&x_animation) {
+									*animation = animation.move_by(drag_delta.x);
+								}else {
+									shape.shape.style.position.x += drag_delta.x;
+								}
+								if let Some(animation) = shape.animation.get_mut(&y_animation) {
+									*animation = animation.move_by(drag_delta.y);
+								}else {
+									shape.shape.style.position.y += drag_delta.y;
+								}
+							}
+						}
+					}
+				}
+				inner.is_something_changed = true;
+			}
 		}
 	)
 }
@@ -411,19 +610,17 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 		.set_height(320.0)
 		.set_width(540.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([false; 2]), 
 		|ui, _| {
 			let area = ui.window_area();
-			let selects = match core.current_selects() {
-				Ok(t) => t,
-				Err(e) => {
-					msg.message(format!("{}", e), ui);
-					return;
-				}	
-			};
+			// let selects = match core.current_selects() {
+			// 	Ok(t) => t,
+			// 	Err(e) => {
+			// 		msg.message(format!("{}", e), ui);
+			// 		return;
+			// 	}	
+			// };
 			let toolbar_width = 270.0;
 			ui.show(&mut Card::new("note arranger toolbar")
 				.set_position(Vec2::same(16.0))
@@ -437,23 +634,30 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 						inner.is_arrangement_on = false;
 					}
 
-					if selects.is_empty() {
-						ui.label("N/A");
+					if let Some(id) = &inner.current_judge_field {
+						ui.label(id);
 					}else {
-						match &selects[0] {
-							Select::JudgeField(id) => ui.label(id),
-							_ => {
-								ui.label("not a judge field");
-								return
-							}
-						};
+						ui.label("N/A");
+						return;
 					}
+
+					// if inner.current_judge_field.is_none() {
+					// 	ui.label("N/A");
+					// }else {
+					// 	match &selects[0] {
+					// 		Select::JudgeField(id) => ui.label(id),
+					// 		_ => {
+					// 			ui.label("not a judge field");
+					// 			return
+					// 		}
+					// 	};
+					// }
 
 					if let Some(play_info) = &core.play_info {
 						ui.label(format!("total notes: {}", play_info.total_notes));
 					}
 
-					if !selects.is_empty() {
+					if let Some(id) = &inner.current_judge_field {
 						if let Some((chart, info)) = &mut core.current_chart {
 							let sustain_time = info.sustain_time; 
 							let beats = info.total_beats();
@@ -465,21 +669,21 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 									if !inner.is_adsorption {
 										let mut sec = input.as_seconds_f32();
 										if ui.button("-").is_clicked() {
-											sec = sec - 0.1
+											sec -= 0.1
 										}
 										ui.add(Slider::new(0.01..=sustain_time.as_seconds_f32(), &mut sec, text).step(0.01).suffix("s"));
 										if ui.button("+").is_clicked() {
-											sec = sec + 0.1
+											sec += 0.1
 										}
 										*input = Duration::seconds_f32(sec);
 									}else {
 										let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 										if ui.button("-").is_clicked() {
-											sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+											sustain_beats = sustain_beats.saturating_sub(1);
 										}
 										ui.add(Slider::new(0..=beats.ceil() as usize, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 										if ui.button("+").is_clicked() {
-											sustain_beats = sustain_beats + 1;
+											sustain_beats += 1;
 										}
 										*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 									}
@@ -492,19 +696,11 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 								}
 							};
 
-							let (start_time, sustain_time) = match &selects[0] {
-								Select::JudgeField(id) => {
-									if let Some(t) = chart.judge_fields.get_mut(id) {
-										(&mut t.start_time, &mut t.sustain_time)
-									}else {
-										msg.message("cant find select resorce", ui);
-										return;
-									}
-								},
-								_ => {
-									ui.label("unsupported");
-									return;
-								}
+							let (start_time, sustain_time) = if let Some(t) = chart.judge_fields.get_mut(id) {
+								(&mut t.start_time, &mut t.sustain_time)
+							}else {
+								msg.message("cant find select resorce", ui);
+								return;
 							};
 
 							change_time(start_time, "start time".to_string(), ui);
@@ -512,7 +708,11 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 						}
 					}
 
+					if ui.button("clear current judge field").is_clicked() {
+						inner.current_judge_field = None;
+					}
 					if ui.button("clear selects").is_clicked() {
+						inner.current_animation_editing = None;
 						if let Err(e) = core.clear_selects() {
 							msg.message(format!("{}", e), ui);
 						}
@@ -528,25 +728,13 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 					ui.selectable_value(&mut inner.note_type, JudgeType::Slide, "slide");
 					ui.selectable_value(&mut inner.note_type, JudgeType::Flick, "flick");
 					ui.selectable_value(&mut inner.note_type, JudgeType::TapAndFlick, "tap and flick");
-					if ui.switch(&mut if let JudgeType::Hold(_) = inner.note_type {
-						true
-					}else {
-						false
-					}, "hold").is_clicked() {
+					if ui.switch(&mut matches!(inner.note_type, JudgeType::Hold(_)), "hold").is_clicked() {
 						inner.note_type = JudgeType::Hold(Duration::ZERO);
 					};
-					if ui.switch(&mut if let JudgeType::AngledFilck(_) = inner.note_type {
-						true
-					}else {
-						false
-					}, "angled flick").is_clicked() {
+					if ui.switch(&mut matches!(inner.note_type, JudgeType::AngledFilck(_)), "angled flick").is_clicked() {
 						inner.note_type = JudgeType::AngledFilck(0.0);
 					};
-					if ui.switch(&mut if let JudgeType::AngledTapFilck(_) = inner.note_type {
-						true
-					}else {
-						false
-					}, "angled tap flick").is_clicked() {
+					if ui.switch(&mut matches!(inner.note_type, JudgeType::AngledTapFilck(_)), "angled tap flick").is_clicked() {
 						inner.note_type = JudgeType::AngledTapFilck(0.0);
 					};
 					
@@ -556,17 +744,15 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 								let mut sec = t.as_seconds_f32();
 								ui.add(Slider::new(0.01..=10.0, &mut sec, "hold length").step(0.01).suffix("s"));
 								*t = Duration::seconds_f32(sec);
-							}else {
-								if let Some((_, info)) = &mut core.current_chart {
-									let sustain_time = info.sustain_time.as_seconds_f32(); 
-									let beats = info.total_beats();
-									let beat_quator = (inner.time_baseline as f32).powf(((1.0 / inner.timeline_scale_factor).log(inner.time_baseline as f32)).floor());
-									let beats = beats / beat_quator;
-									let bps = beats / sustain_time;
-									let mut sustain_beats = (t.as_seconds_f32() * bps).floor() as usize;
-									ui.add(Slider::new(1..=100, &mut sustain_beats, "hold length").step(1.0).suffix(format!("*{} beat", beat_quator)));
-									*t = Duration::seconds_f32(sustain_beats as f32 / bps);
-								}
+							}else if let Some((_, info)) = &mut core.current_chart {
+								let sustain_time = info.sustain_time.as_seconds_f32(); 
+								let beats = info.total_beats();
+								let beat_quator = (inner.time_baseline as f32).powf(((1.0 / inner.timeline_scale_factor).log(inner.time_baseline as f32)).floor());
+								let beats = beats / beat_quator;
+								let bps = beats / sustain_time;
+								let mut sustain_beats = (t.as_seconds_f32() * bps).floor() as usize;
+								ui.add(Slider::new(1..=100, &mut sustain_beats, "hold length").step(1.0).suffix(format!("*{} beat", beat_quator)));
+								*t = Duration::seconds_f32(sustain_beats as f32 / bps);
 							}
 						},
 						JudgeType::AngledFilck(t) | JudgeType::AngledTapFilck(t) => {
@@ -589,16 +775,7 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 					let current_time = inner.current_time;
 					if let Some((chart, info)) = &mut core.current_chart {
 						inner.default_click_effect_center = chart.size / 2.0;
-						if selects.is_empty() {
-							ui.label("select a judge field in element manager first");
-						}else {
-							let judge_field_id = match &selects[0] {
-								Select::JudgeField(id) => id.clone(),
-								_ => {
-									ui.label("not a judge field");
-									return
-								}
-							};
+						if let Some(judge_field_id) = &inner.current_judge_field {
 							let sustain_time = info.sustain_time.as_seconds_f32(); 
 							let beats = info.total_beats();
 							let width = beats * BEAT_WIDTH * inner.timeline_scale_factor;
@@ -610,7 +787,7 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 
 							let beat_quator = (inner.time_baseline as f32).powf(((1.0 / inner.timeline_scale_factor).log(inner.time_baseline as f32)).floor());
 							let beats = beats.floor() / beat_quator;
-							if let Some(judge_field) = chart.judge_fields.get_mut(&judge_field_id) {
+							if let Some(judge_field) = chart.judge_fields.get_mut(judge_field_id) {
 								let (canvas, back) = Canvas::new_with_return(Vec2::new(width, height), |painter| -> HashMap<u64, Vec<String>> {
 									let start = (current_scroll * beats / width).floor();
 									for i in (start as usize)..(beats as usize) {
@@ -656,7 +833,7 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 									let mut map: HashMap<u64, Vec<String>> = HashMap::new();
 									let mut notes = vec!();
 									for (id, note) in &chart.notes {
-										if note.judge_field_id == judge_field_id {
+										if &note.judge_field_id == judge_field_id {
 											notes.push((id, note));
 										}
 									}
@@ -769,12 +946,11 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 									painter.rect(Vec2::new(4.0, height), Vec2::same(2.0)); 
 
 									if card_area.is_point_inside(&(inner_position)) {
-										let x;
-										if inner.is_adsorption {
-											x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+										let x = if inner.is_adsorption {
+											((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 										}else {
-											x = cursor_position.x - 16.0 + current_scroll;
-										}
+											cursor_position.x - 16.0 + current_scroll
+										};
 										let y = cursor_position.y - 16.0;
 										painter.set_color([1.0,1.0,1.0, 0.3]);
 										painter.set_position(Vec2::new(current_scroll, y));
@@ -801,55 +977,63 @@ fn arrangement(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, c
 								(ui.input().cursor_position().unwrap_or(Vec2::INF).is_inside(Area::new(res.area.left_top(), res.area.right_top() + Vec2::y(16.0))) ||
 								ui.input().is_key_pressing(Key::AltLeft) ||
 								ui.input().is_mouse_released(MouseButton::Middle) ) {
-									let x;
-									if inner.is_adsorption {
-										x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+									inner.is_something_changed = true;
+									let x = if inner.is_adsorption {
+										((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 									}else {
-										x = cursor_position.x - 16.0 + current_scroll;
-									}
+										cursor_position.x - 16.0 + current_scroll
+									};
 									inner.time_pointer = Duration::seconds_f32(x / width * sustain_time);
 								}else if res.is_multi_clicked(2) && ui.input().is_mouse_released(MouseButton::Left) {
-									let x;
-									if inner.is_adsorption {
-										x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+									let x = if inner.is_adsorption {
+										((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 									}else {
-										x = cursor_position.x - 16.0 + current_scroll;
-									}
+										cursor_position.x - 16.0 + current_scroll
+									};
 									let judge_time = x / width * sustain_time;
 									let mut index = chart.notes.len();
 									loop {
 										let id = format!("{} {}",judge_field_id ,index);
-										if let None = chart.notes.get(&id) {
+										if !chart.notes.contains_key(&id) {
 											chart.notes.insert(id.clone(), Note {
 												judge_type: inner.note_type.clone(),
 												judge_time: Duration::seconds_f32(judge_time),
-												judge_field_id,
+												judge_field_id: judge_field_id.to_string(),
 												note_id: id,
 												click_effect_position: inner.default_click_effect_center,
 												..Default::default()
 											});
 											break;
 										}
-										index = index + 1
+										index += 1
 									}
 								}
 								if res.is_clicked() && ui.input().is_mouse_released(MouseButton::Right) {
-									let x;
-									if inner.is_adsorption {
-										x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+									inner.is_something_changed = true;
+									let x = if inner.is_adsorption {
+										((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 									}else {
-										x = cursor_position.x - 16.0 + current_scroll;
-									}
+										cursor_position.x - 16.0 + current_scroll
+									};
 									let y = cursor_position.y - 16.0;
 									let key = (x * 0.1).round() as u64;
 									let index = (y / 32.0).abs().floor() as usize;
-									let index = index.checked_sub(1).unwrap_or(0);
+									let index = index.saturating_sub(1);
 									if let Some(inner) = back.get(&key) {
 										if index < inner.len() {
 											chart.notes.remove(&inner[index]);
 										}
 									}
 								}
+							}
+						}else if let Some((chart, _)) = &core.current_chart {
+							for id in chart.judge_fields.keys() {
+								// if field.start_time + field.sustain_time < inner.time_pointer - inner.filter || field.start_time > inner.time_pointer + inner.filter {
+								// 	continue;
+								// }
+								if ui.button(id).is_clicked() {
+									inner.current_judge_field = Some(id.to_string());
+								};
 							}
 						}
 					}
@@ -865,6 +1049,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 	};
 	let mut need_copy = false;
 	let mut need_paste = false;
+	let mut need_paste_to_all = false;
 	ui.show(&mut Card::new("animation editor")
 		.set_rounding(Vec2::same(16.0))
 		.set_color(ui.style().background_color.brighter(0.1))
@@ -872,8 +1057,6 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 		.set_height(320.0)
 		.set_width(540.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([false; 2]), |ui, _| {
 			let selects = match core.current_selects() {
@@ -896,14 +1079,22 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 					if ui.button("close").is_clicked() {
 						inner.is_timeline_on = false;
 					}
-					if inner.current_animation_id.is_empty() {
+					if inner.current_animation_attribute.is_empty() || inner.current_animation_editing.is_none() {
 						ui.label("N/A");
 					}else {
-						ui.label(inner.current_animation_id.replace("----", " ").replace("Shape ", "").replace("style ", "").replace("JudgeFieldInner ", "").trim());
+						let attribute = inner.current_animation_attribute.replace("----", " ").replace("Shape ", "").replace("style ", "").replace("JudgeFieldInner ", "");
+						ui.label(format!("{:?} - {}", inner.current_animation_editing.clone().unwrap(), attribute.trim()));
 					};
 
+					if ui.button("change to").is_clicked() {
+						inner.is_changing_to_other_select = true;
+					}
+
 					if !selects.is_empty() {
-						if let Some((chart, info)) = &mut core.current_chart {
+						if inner.current_animation_editing.is_none() {
+							inner.current_animation_editing = Some(selects[0].clone());
+						}
+						if let (Some((chart, info)), Some(current_editing)) = (&mut core.current_chart, &inner.current_animation_editing) {
 							let sustain_time = info.sustain_time; 
 							let beats = info.total_beats();
 							let beat_quator = (inner.time_baseline as f32).powf(((1.0 / inner.timeline_scale_factor).log(inner.time_baseline as f32)).floor());
@@ -914,21 +1105,21 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 									if !inner.is_adsorption {
 										let mut sec = input.as_seconds_f32();
 										if ui.button("-").is_clicked() {
-											sec = sec - 0.1
+											sec -= 0.1
 										}
 										ui.add(Slider::new(0.01..=sustain_time.as_seconds_f32(), &mut sec, text).step(0.01).suffix("s"));
 										if ui.button("+").is_clicked() {
-											sec = sec + 0.1
+											sec += 0.1
 										}
 										*input = Duration::seconds_f32(sec);
 									}else {
 										let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 										if ui.button("-").is_clicked() {
-											sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+											sustain_beats = sustain_beats.saturating_sub(1);
 										}
 										ui.add(Slider::new(0..=beats.ceil() as usize, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 										if ui.button("+").is_clicked() {
-											sustain_beats = sustain_beats + 1;
+											sustain_beats += 1;
 										}
 										*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 									}
@@ -941,7 +1132,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								}
 							};
 
-							let (start_time, sustain_time) = match &selects[0] {
+							let (start_time, sustain_time) = match &current_editing {
 								Select::Shape(id) => {
 									if let Some(t) = chart.shapes.get_mut(id) {
 										(&mut t.start_time, &mut t.sustain_time)
@@ -967,6 +1158,8 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 							change_time(start_time, "start time".to_string(), ui);
 							change_time(sustain_time, "sustain time".to_string(), ui);
 						}
+					}else {
+						inner.current_animation_editing = None;
 					}
 
 					if ui.button("scroll to current").is_clicked() {
@@ -976,15 +1169,22 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 						need_copy = true;
 					}
 					if ui.button("paste").is_clicked() {
+						inner.is_something_changed = true;
 						need_paste = true;
 					}
-					if ui.button("delete animation").is_multi_clicked(2) && !inner.current_animation_id.is_empty() {
+					if ui.button("paste to all").is_clicked() {
+						inner.is_something_changed = true;
+						need_paste_to_all = true;
+					}
+					if ui.button("delete animation").is_multi_clicked(2) && !inner.current_animation_attribute.is_empty() {
+						inner.is_something_changed = true;
 						inner.is_animation_delete = true;
 					}
 					if ui.button("clear attribute").is_clicked() {
-						inner.current_animation_id.clear();
+						inner.current_animation_attribute.clear();
 					}
 					if ui.button("clear selects").is_clicked() {
+						inner.current_animation_editing = None;
 						if let Err(e) = core.clear_selects() {
 							msg.message(format!("{}", e), ui);
 						}
@@ -1009,57 +1209,84 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 					ui.label("round");
 					ui.horizental(|ui| {
 						if ui.button("-").is_clicked() {
-							inner.round = inner.round - 1;
+							inner.round -= 1;
 						}
 						ui.dragable_value(&mut inner.round);
 						if ui.button("+").is_clicked() {
-							inner.round = inner.round + 1;
+							inner.round += 1;
 						}
-						if inner.round > 4 {
-							inner.round = 4;
-						}else if inner.round < -4 {
-							inner.round = -4;
-						}
+						inner.round = inner.round.clamp(-4, 4);
 					});
 					ui.label("value_offset");
 					ui.horizental(|ui| {
 						if ui.button("-").is_clicked() {
-							inner.value_offset = inner.value_offset - 10_f32.powf(inner.round as f32);
+							inner.value_offset -= 10_f32.powf(inner.round as f32);
 						}
 						ui.add(Slider::new(-500.0..=500.0, &mut inner.value_offset, "").step(0.01));
 						if ui.button("+").is_clicked() {
-							inner.value_offset = inner.value_offset + 10_f32.powf(inner.round as f32);
+							inner.value_offset += 10_f32.powf(inner.round as f32);
 						}
 						if ui.button("round").is_clicked() {
 							inner.value_offset = (inner.value_offset / 10_f32.powf(inner.round as f32)).round() * 10_f32.powf(inner.round as f32);
 						}
-						if inner.value_offset > 500.0 {
-							inner.value_offset = 500.0;
-						}else if inner.value_offset < -500.0 {
-							inner.value_offset = -500.0;
-						}
+						inner.value_offset = inner.value_offset.clamp(-500.0, 500.0);
 					});
+					if ui.button("reset offset").is_clicked() {
+						inner.value_offset = 0.0;
+					}
+					let mut move_by_animation = |id: &Select, ui: &mut Ui| {
+						let chart = if let Some((chart, _)) = &mut core.current_chart {
+							chart
+						}else {
+							return;
+						};
+						let animation = match id {
+							Select::Shape(id) => {
+								if let Some(t) = chart.shapes.get_mut(id) {
+									&mut t.animation
+								}else {
+									msg.message("cant find select resorce", ui);
+									return;
+								}
+							},
+							Select::JudgeField(id) => {
+								if let Some(t) = chart.judge_fields.get_mut(id) {
+									&mut t.animation
+								}else {
+									msg.message("cant find select resorce", ui);
+									return;
+								}
+							},
+							_ => {
+								return;
+							}
+						};
+						if let Some(animation) = animation.get_mut(&inner.current_animation_attribute) {
+							*animation = animation.move_by(inner.value_offset);
+						}
+					};
+					if ui.button("move by offset").is_clicked() {
+						inner.is_something_changed = true;
+						if let Some(current_editing) = &inner.current_animation_editing {
+							move_by_animation(current_editing, ui);
+						}
+					}
+
+					if ui.button("move by offset for all").is_clicked() {
+						inner.is_something_changed = true;
+						for id in &selects {
+							move_by_animation(id, ui);
+						}
+					}
 
 					ui.label("linker type");
-					if ui.switch(&mut if let AnimationLinker::Bezier(_, _) = inner.current_linker {
-						true
-					}else {
-						false
-					}, "bezier").is_clicked() {
+					if ui.switch(&mut matches!(inner.current_linker, AnimationLinker::Bezier(_, _)), "bezier").is_clicked() {
 						inner.current_linker = AnimationLinker::Bezier(Vec2::new(0.5,0.1), Vec2::new(0.5,0.9));
 					};
-					if ui.switch(&mut if let AnimationLinker::Linear = inner.current_linker {
-						true
-					}else {
-						false
-					}, "linear").is_clicked() {
+					if ui.switch(&mut matches!(inner.current_linker, AnimationLinker::Linear), "linear").is_clicked() {
 						inner.current_linker = AnimationLinker::Linear;
 					};
-					if ui.switch(&mut if let AnimationLinker::Mutation = inner.current_linker {
-						true
-					}else {
-						false
-					}, "mutation").is_clicked() {
+					if ui.switch(&mut matches!(inner.current_linker, AnimationLinker::Mutation), "mutation").is_clicked() {
 						inner.current_linker = AnimationLinker::Mutation;
 					};
 
@@ -1109,17 +1336,13 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								is_point2_draging = false;
 							}
 							fn compress(input: &mut f32) {
-								if *input > 1.0 {
-									*input = 1.0
-								}else if *input < 0.0 {
-									*input = 0.0
-								}
+								*input = (*input).clamp(0.0, 1.0);
 							}
 							compress(&mut point1.x);
 							compress(&mut point1.y);
 							compress(&mut point2.x);
 							compress(&mut point2.y);
-							ui.memory_save(&res.id, &(is_point1_draging, is_point2_draging));
+							ui.memory_save(&res.id, (is_point1_draging, is_point2_draging));
 						},
 						AnimationLinker::Power(n) => {
 							ui.add(Slider::new(0.25..=4.0, n, "n").step(0.01).logarithmic(true));
@@ -1131,7 +1354,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 						inner.is_adsorption = true;
 						inner.timeline_scale_factor = 1.0;
 						inner.time_baseline = 2;
-						inner.current_animation_id.clear();
+						inner.current_animation_attribute.clear();
 					}
 				}
 			);
@@ -1148,7 +1371,21 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 						if selects.is_empty() {
 							ui.label("select a element in element manager first");
 						}else {
-							if inner.current_animation_id.is_empty() {
+							if inner.is_changing_to_other_select {
+								for id in selects {
+									if ui.button(format!("{:?}", id)).is_clicked() {
+										inner.current_animation_editing = Some(id.clone());
+										inner.is_changing_to_other_select = false;
+									}
+								}
+								return;
+							}
+							let current_editing = if let Some(t) = &inner.current_animation_editing {
+								t.clone()
+							}else {
+								return;
+							};
+							if inner.current_animation_attribute.is_empty() {
 								fn selector(input: &mut ParsedData, ui: &mut Ui, id: &String) -> Option<String> {
 									let id = format!("{}----{}", id, input.name);
 									let mut out = None;
@@ -1168,10 +1405,8 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 											}
 										},
 										DataEnum::Int(_, _) | DataEnum::Float(_) => {
-											if input.name != String::from("time") {
-												if ui.button(id.replace("----", " ").replace("Shape ", "").replace("style ", "").replace("JudgeFieldInner ", "").trim()).is_clicked() {
-													out = Some(id)
-												}
+											if input.name != *"time" && ui.button(id.replace("----", " ").replace("Shape ", "").replace("style ", "").replace("JudgeFieldInner ", "").trim()).is_clicked() {
+												out = Some(id)
 											}
 										}
 										_ => {}
@@ -1180,7 +1415,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 									out
 								}
 
-								match &selects[0] {
+								match &current_editing {
 									Select::Shape(id) => {
 										ui.label("select a attribute to animate");
 										if let Some(t) = chart.shapes.get(id) {
@@ -1192,7 +1427,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 												}
 											};
 											if let Some(t) = selector(&mut input, ui, &String::new()) {
-												inner.current_animation_id = t;
+												inner.current_animation_attribute = t;
 											}
 										}
 									},
@@ -1206,7 +1441,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 												}
 											};
 											if let Some(t) = selector(&mut input, ui, &String::new()) {
-												inner.current_animation_id = t;
+												inner.current_animation_attribute = t;
 											}
 										}
 									},
@@ -1215,8 +1450,49 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 									}
 								};
 								return;
+							};
+							let mut paste_to = |animation: &mut Animation, copied_animation: Option<Animation>| {
+								if let Some(mut copied_animation) = copied_animation {
+									copied_animation.start_time = copied_animation.start_time + inner.time_pointer + inner.paste_offset;
+									copied_animation.start_value += inner.value_offset;
+									for linker in &mut copied_animation.linkers {
+										linker.end_value += inner.value_offset;
+									}
+									animation.combine(&mut copied_animation, inner.current_linker.clone());
+								}else {
+									msg.message("no animation has pasted", ui);
+								};
+							};
+							if need_paste_to_all {
+								for id in selects {
+									let animation = match &id {
+										Select::Shape(id) => {
+											if let Some(t) = chart.shapes.get_mut(id) {
+												t.animation.get_mut(&inner.current_animation_attribute)
+											}else {
+												msg.message("cant find select resorce", ui);
+												return;
+											}
+										},
+										Select::JudgeField(id) => {
+											if let Some(t) = chart.judge_fields.get_mut(id) {
+												t.animation.get_mut(&inner.current_animation_attribute)
+											}else {
+												msg.message("cant find select resorce", ui);
+												return;
+											}
+										},
+										_ => {
+											ui.label("unsupported");
+											return;
+										}
+									};
+									if let Some(animation) = animation {
+										paste_to(animation, inner.copied_animation.clone());
+									}
+								}
 							}
-							let (shape_start_time, shape_sustain_time, animation) = match &selects[0] {
+							let (shape_start_time, shape_sustain_time, animation) = match &current_editing {
 								Select::Shape(id) => {
 									if let Some(t) = chart.shapes.get_mut(id) {
 										(t.start_time, t.sustain_time, t.get_animation_map())
@@ -1239,33 +1515,26 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								}
 							};
 							if inner.is_animation_delete {
-								animation.remove(&inner.current_animation_id);
-								inner.current_animation_id.clear();
+								animation.remove(&inner.current_animation_attribute);
+								inner.current_animation_attribute.clear();
 								inner.is_animation_delete = false;
 							}
-							let animation = if let Some(t) = animation.get_mut(&inner.current_animation_id) {
+							let animation = if let Some(t) = animation.get_mut(&inner.current_animation_attribute) {
 								t
 							}else {
-								animation.insert(inner.current_animation_id.clone(), Default::default());
+								animation.insert(inner.current_animation_attribute.clone(), Default::default());
 								return;
 							};
 
 							if need_copy {
 								let mut copied_animation = animation.clone();
-								copied_animation.start_time = copied_animation.start_time - inner.time_pointer;
+								copied_animation.start_time -= inner.time_pointer;
 								inner.copied_animation = Some(copied_animation);
+								need_copy = false;
 							}
 							if need_paste {
-								if let Some(mut copied_animation) = inner.copied_animation.clone() {
-									copied_animation.start_time = copied_animation.start_time + inner.time_pointer + inner.paste_offset;
-									copied_animation.start_value = copied_animation.start_value + inner.value_offset;
-									for linker in &mut copied_animation.linkers {
-										linker.end_value = linker.end_value + inner.value_offset;
-									}
-									animation.combine(&mut copied_animation, inner.current_linker.clone());
-								}else {
-									msg.message("no animation has cpoied", ui);
-								}
+								paste_to(animation, inner.copied_animation.clone());
+								need_paste = false;
 							}
 							let sustain_time = info.sustain_time; 
 							let beats = info.total_beats();
@@ -1325,7 +1594,7 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								painter.text(format!("{:.4}", animation.start_value));
 
 								for linker in &animation.linkers {
-									x = x + width * (linker.sustain_time / sustain_time) as f32;
+									x += width * (linker.sustain_time / sustain_time) as f32;
 									let y = (animation_y_end + (animation_y_start - animation_y_end) * (linker.end_value - min_value) / delta) - offset;
 									end_position = Vec2::new(x, y);
 									match linker.linker {
@@ -1404,12 +1673,11 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								painter.rect(Vec2::new(4.0, height), Vec2::same(2.0)); 
 
 								if card_area.is_point_inside(&(inner_position)) {
-									let x;
-									if inner.is_adsorption {
-										x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+									let x = if inner.is_adsorption {
+										((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 									}else {
-										x = cursor_position.x - 16.0 + current_scroll;
-									}
+										cursor_position.x - 16.0 + current_scroll
+									};
 									let y = cursor_position.y - 16.0;
 									let value = ((height - y) - 0.1 * height) / (height * 0.8) * delta + min_value;
 									painter.set_color([1.0,1.0,1.0, 0.3]);
@@ -1435,20 +1703,19 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 							(ui.input().cursor_position().unwrap_or(Vec2::INF).is_inside(Area::new(res.area.left_top(), res.area.right_top() + Vec2::y(16.0))) ||
 							ui.input().is_key_pressing(Key::AltLeft) ||
 							ui.input().is_mouse_released(MouseButton::Middle) ) {
-								let x;
-								if inner.is_adsorption {
-									x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+								inner.is_something_changed = true;
+								let x = if inner.is_adsorption {
+									((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 								}else {
-									x = cursor_position.x - 16.0 + current_scroll;
-								}
+									cursor_position.x - 16.0 + current_scroll
+								};
 								inner.time_pointer = x / width * sustain_time;
 							}else if res.is_multi_clicked(2) && ui.input().is_mouse_released(MouseButton::Left) {
-								let x;
-								if inner.is_adsorption {
-									x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+								let x = if inner.is_adsorption {
+									((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 								}else {
-									x = cursor_position.x - 16.0 + current_scroll;
-								}
+									cursor_position.x - 16.0 + current_scroll
+								};
 								let y = cursor_position.y - 16.0;
 								let value = ((height - y) - 0.1 * height) / (height * 0.8) * delta + min_value;
 								let time = x / width * sustain_time;
@@ -1456,12 +1723,12 @@ fn timeline(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core
 								animation.insert_point(time, round, inner.current_linker.clone());
 							}
 							if res.is_clicked() && ui.input().is_mouse_released(MouseButton::Right) {
-								let x;
-								if inner.is_adsorption {
-									x = ((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats;
+								inner.is_something_changed = true;
+								let x = if inner.is_adsorption {
+									((cursor_position.x - 16.0 + current_scroll) * beats / width).round() * width / beats
 								}else {
-									x = cursor_position.x - 16.0 + current_scroll;
-								}
+									cursor_position.x - 16.0 + current_scroll
+								};
 								let time = x / width * sustain_time;
 								animation.remove_point(time);
 							}
@@ -1481,8 +1748,6 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 		.set_height(320.0)
 		.set_width(480.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([false; 2]), |ui, _| {
 			let mut selects = match core.current_selects() {
@@ -1505,6 +1770,7 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 						inner.is_detail_on = false;
 					}
 					if ui.button("clear selects").is_clicked() {
+						inner.current_animation_editing = None;
 						if let Err(e) = core.clear_selects() {
 							msg.message(format!("{}", e), ui);
 						}
@@ -1559,21 +1825,21 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 								if !inner.is_adsorption {
 									let mut sec = input.as_seconds_f32();
 									if ui.button("-").is_clicked() {
-										sec = sec - 0.1
+										sec -= 0.1
 									}
 									ui.add(Slider::new(0.01..=sustain_time.as_seconds_f32(), &mut sec, text).step(0.01).suffix("s"));
 									if ui.button("+").is_clicked() {
-										sec = sec + 0.1
+										sec += 0.1
 									}
 									*input = Duration::seconds_f32(sec);
 								}else {
 									let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 									if ui.button("-").is_clicked() {
-										sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+										sustain_beats = sustain_beats.saturating_sub(1);
 									}
 									ui.add(Slider::new(0..=beats.ceil() as usize, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 									if ui.button("+").is_clicked() {
-										sustain_beats = sustain_beats + 1;
+										sustain_beats += 1;
 									}
 									*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 								}
@@ -1587,10 +1853,15 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 						};
 						change_time(&mut inner.filter, "filter(±)".to_string(), ui);
 						ui.collapsing("notes", |ui, _| {
+							let mut note_display_vec = vec!();
 							for (id, note) in &chart.notes {
 								if note.judge_time < inner.time_pointer - inner.filter || note.judge_time > inner.time_pointer + inner.filter {
 									continue;
 								}
+								note_display_vec.push(id);
+							}
+							note_display_vec.par_sort();
+							for id in note_display_vec {
 								if ui.switch(&mut selects.contains(&Select::Note(id.clone())), id).is_clicked() {
 									if selects.contains(&Select::Note(id.clone())) {
 										selects.retain(|inner| inner != &Select::Note(id.clone()));
@@ -1602,10 +1873,30 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 						});
 
 						ui.collapsing("judge_fields", |ui, _| {
-							for (id, filed) in &chart.judge_fields {
-								if filed.start_time < inner.time_pointer - inner.filter || filed.start_time > inner.time_pointer + inner.filter {
+							if ui.button("add").is_clicked() {
+								let mut index = chart.judge_fields.len();
+								loop {
+									if let std::collections::hash_map::Entry::Vacant(e) = chart.judge_fields.entry(index.to_string()) {
+										e.insert(JudgeField {
+											start_time: inner.current_time,
+											sustain_time: Duration::seconds(1),
+											..Default::default()
+										});
+										break;
+									} else {
+										index += 1
+									}
+								}
+							}
+							let mut field_display_vec = vec!();
+							for (id, field) in &chart.judge_fields {
+								if field.start_time + field.sustain_time < inner.time_pointer - inner.filter || field.start_time > inner.time_pointer + inner.filter {
 									continue;
 								}
+								field_display_vec.push(id);
+							}
+							field_display_vec.par_sort();
+							for id in field_display_vec {
 								if ui.switch(&mut selects.contains(&Select::JudgeField(id.clone())), id).is_clicked() {
 									if selects.contains(&Select::JudgeField(id.clone())) {
 										selects.retain(|inner| inner != &Select::JudgeField(id.clone()));
@@ -1613,21 +1904,6 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 										selects.push(Select::JudgeField(id.clone()));
 									}
 								};
-							}
-							if ui.button("add").is_clicked() {
-								let mut index = chart.judge_fields.len();
-								loop {
-									if let None = chart.judge_fields.get(&index.to_string()) {
-										chart.judge_fields.insert(index.to_string(), JudgeField {
-											start_time: inner.current_time,
-											sustain_time: Duration::seconds(1),
-											..Default::default()
-										});
-										break;
-									}else {
-										index = index + 1
-									}
-								}
 							}
 						});
 
@@ -1644,25 +1920,13 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 						// });
 
 						ui.collapsing("shapes", |ui, _| {
-							for (id, shape) in &chart.shapes {
-								if !(shape.start_time - inner.filter < inner.time_pointer && shape.start_time + shape.sustain_time + inner.filter > inner.time_pointer) {
-									continue;
-								}
-								if ui.switch(&mut selects.contains(&Select::Shape(id.clone())), id).is_clicked() {
-									if selects.contains(&Select::Shape(id.clone())) {
-										selects.retain(|inner| inner != &Select::Shape(id.clone()));
-									}else {
-										selects.push(Select::Shape(id.clone()));
-									}
-								};
-							}
 							ui.collapsing("add" ,|ui, _| {
 								let mut add_shape = |ui: &mut Ui, text: String, add: ShapeElement| {
 									if ui.button(text).is_clicked() {
 										let mut index = chart.shapes.len();
 										loop {
-											if let None = chart.shapes.get(&index.to_string()) {
-												chart.shapes.insert(index.to_string(), shapoist_core::system::core_structs::Shape { 
+											if let std::collections::hash_map::Entry::Vacant(e) = chart.shapes.entry(index.to_string()) {
+												e.insert(shapoist_core::system::core_structs::Shape { 
 													id: index.to_string(),
 													shape: Shape {
 														shape: add,
@@ -1673,8 +1937,8 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 													..Default::default()
 												});
 												break;
-											}else {
-												index = index + 1
+											} else {
+												index += 1
 											}
 										}
 									}
@@ -1684,7 +1948,24 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 								add_shape(ui, "Text".to_string(), ShapeElement::Text(Default::default()));
 								add_shape(ui, "CubicBezier".to_string(), ShapeElement::CubicBezier(Default::default()));
 								add_shape(ui, "Line".to_string(), ShapeElement::Line(Default::default()));
-							})
+							});
+							let mut shape_display_vec = vec!();
+							for (id, shape) in &chart.shapes {
+								if !(shape.start_time - inner.filter < inner.time_pointer && shape.start_time + shape.sustain_time + inner.filter > inner.time_pointer) {
+									continue;
+								}
+								shape_display_vec.push(id);
+							}
+							shape_display_vec.par_sort();
+							for id in shape_display_vec {
+								if ui.switch(&mut selects.contains(&Select::Shape(id.clone())), id).is_clicked() {
+									if selects.contains(&Select::Shape(id.clone())) {
+										selects.retain(|inner| inner != &Select::Shape(id.clone()));
+									}else {
+										selects.push(Select::Shape(id.clone()));
+									}
+								};
+							}
 						});
 					}
 				}
@@ -1711,21 +1992,21 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 								if !inner.is_adsorption {
 									let mut sec = input.as_seconds_f32();
 									if ui.button("-").is_clicked() {
-										sec = sec - 0.1
+										sec -= 0.1
 									}
 									ui.add(Slider::new(0.01..=sustain_time.as_seconds_f32(), &mut sec, text).step(0.01).suffix("s"));
 									if ui.button("+").is_clicked() {
-										sec = sec + 0.1
+										sec += 0.1
 									}
 									*input = Duration::seconds_f32(sec);
 								}else {
 									let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 									if ui.button("-").is_clicked() {
-										sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+										sustain_beats = sustain_beats.saturating_sub(1);
 									}
 									ui.add(Slider::new(0..=beats.ceil() as usize, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 									if ui.button("+").is_clicked() {
-										sustain_beats = sustain_beats + 1;
+										sustain_beats += 1;
 									}
 									*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 								}
@@ -1828,23 +2109,7 @@ fn detail(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 			);
 			if !delta.is_empty() {
 				if !core.timer.is_started() {
-					if let Err(e) = core.refresh_play_info() {
-						if let Err(e) = core.play(PlayMode::Auto) {
-							msg.message(format!("{}", e), ui);
-						}else {
-							if let Err(e) = core.pause() {
-								msg.message(format!("{}", e), ui);
-							}
-							msg.message(format!("{}", e), ui);
-						}
-					}
-					core.timer.set_to(inner.time_pointer + Duration::seconds_f32(3.0));
-					if let Err(e) = core.update_render_queue(false) {
-						msg.message(format!("{}", e), ui);
-					};
-					if let Err(e) = core.pause() {
-						msg.message(format!("{}", e), ui);
-					}
+					inner.is_something_changed = true;
 				}
 				if let Some((chart, _)) = &mut core.current_chart {
 					for select in &selects {
@@ -1891,8 +2156,6 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 		.set_height(180.0 - 32.0)
 		.set_width(480.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([true; 2]), |ui, _| {
 			ui.label("chart info");
@@ -1906,11 +2169,11 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 							*value = (*value / 10_f32.powf(inner.round as f32)).round() * 10_f32.powf(inner.round as f32);
 						}
 						if ui.button("-").is_clicked() {
-							*value = *value - 10_f32.powf(inner.round as f32);
+							*value -= 10_f32.powf(inner.round as f32);
 						}
 						ui.add(Slider::new(range, value, "").step(step));
 						if ui.button("+").is_clicked() {
-							*value = *value + 10_f32.powf(inner.round as f32);
+							*value += 10_f32.powf(inner.round as f32);
 						}
 					});
 				};
@@ -1925,7 +2188,7 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 						if !inner.is_adsorption {
 							let mut sec = input.as_seconds_f32();
 							if ui.button("-").is_clicked() {
-								sec = sec - 0.1
+								sec -= 0.1
 							}
 							let range = if allow_neg {
 								-sustain_time.as_seconds_f32()..=sustain_time.as_seconds_f32()
@@ -1934,7 +2197,7 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 							};
 							ui.add(Slider::new(range, &mut sec, text).step(0.01).suffix("s"));
 							if ui.button("+").is_clicked() {
-								sec = sec + 0.1
+								sec += 0.1
 							}
 							*input = Duration::seconds_f32(sec);
 						}else {
@@ -1949,7 +2212,7 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 							};
 							ui.add(Slider::new(range, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 							if ui.button("+").is_clicked() {
-								sustain_beats = sustain_beats + 1;
+								sustain_beats += 1;
 							}
 							*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 						}
@@ -1961,10 +2224,8 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 						if *input < -sustain_time {
 							*input = sustain_time
 						}
-					}else {
-						if *input < Duration::ZERO {
-							*input = Duration::ZERO
-						}
+					}else if *input < Duration::ZERO {
+						*input = Duration::ZERO
 					}
 					
 				};
@@ -2024,6 +2285,7 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 				};
 
 				if ui.button("clear selects").is_clicked() {
+					inner.current_animation_editing = None;
 					if let Err(e) = core.clear_selects() {
 						msg.message(format!("{}", e), ui);
 					}
@@ -2033,20 +2295,17 @@ fn chart_info(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, co
 				ui.label("round");
 				ui.horizental(|ui| {
 					if ui.button("-").is_clicked() {
-						inner.round = inner.round - 1;
+						inner.round -= 1;
 					}
 					ui.dragable_value(&mut inner.round);
 					if ui.button("+").is_clicked() {
-						inner.round = inner.round + 1;
+						inner.round += 1;
 					}
-					if inner.round > 4 {
-						inner.round = 4;
-					}else if inner.round < -4 {
-						inner.round = -4;
-					}
+					inner.round = inner.round.clamp(-4, 4);
 				});
 
 				if is_need_play {
+					inner.is_something_changed = true;
 					if let Err(e) = if core.timer.is_started() {
 						core.pause()
 					}else {
@@ -2068,8 +2327,6 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 		.set_height(320.0)
 		.set_width(480.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([false; 2]), 
 	|ui, _| {
@@ -2091,15 +2348,13 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 			if let Some((chart, _)) = &mut core.current_chart {
 				let mut need_clear = None;
 				if inner.is_linking_note.is_some() {
-					for (_, shape) in &chart.shapes {
-						if shape.start_time <= inner.time_pointer && shape.start_time + shape.sustain_time >= inner.time_pointer {
-							if ui.button(&shape.id).is_clicked() {
-								inner.link_id_temp = Some(shape.id.clone());
-							};
+					for shape in chart.shapes.values() {
+						if shape.start_time <= inner.time_pointer && shape.start_time + shape.sustain_time >= inner.time_pointer && ui.button(&shape.id).is_clicked() {
+							inner.link_id_temp = Some(shape.id.clone());
 						}
 					}
 				}else {
-					for (_, shape) in &chart.shapes {
+					for shape in chart.shapes.values() {
 						if shape.start_time <= inner.time_pointer && shape.start_time + shape.sustain_time >= inner.time_pointer {
 							ui.collapsing(format!("Shape: {}", shape.id), |ui, _| {
 								if let Some(id) = &shape.linked_note_id {
@@ -2113,10 +2368,8 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 									if ui.button("clear").is_clicked() {
 										need_clear = Some(shape.id.clone());
 									}
-								}else {
-									if ui.button("link").is_clicked() {
-										inner.is_linking_shape = Some(shape.id.clone())
-									}
+								}else if ui.button("link").is_clicked() {
+									inner.is_linking_shape = Some(shape.id.clone())
 								}
 							});
 						}
@@ -2152,21 +2405,21 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 						if !inner.is_adsorption {
 							let mut sec = input.as_seconds_f32();
 							if ui.button("-").is_clicked() {
-								sec = sec - 0.1
+								sec -= 0.1
 							}
 							ui.add(Slider::new(0.01..=sustain_time.as_seconds_f32(), &mut sec, text).step(0.01).suffix("s"));
 							if ui.button("+").is_clicked() {
-								sec = sec + 0.1
+								sec += 0.1
 							}
 							*input = Duration::seconds_f32(sec);
 						}else {
 							let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 							if ui.button("-").is_clicked() {
-								sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+								sustain_beats = sustain_beats.saturating_sub(1);
 							}
 							ui.add(Slider::new(0..=beats.ceil() as usize, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 							if ui.button("+").is_clicked() {
-								sustain_beats = sustain_beats + 1;
+								sustain_beats += 1;
 							}
 							*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 						}
@@ -2180,15 +2433,13 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 				};
 				change_time(&mut inner.range_of_current_note, "search range(±): ".to_string(), ui);
 				if inner.is_linking_shape.is_some() {
-					for (_, note) in &chart.notes {
-						if note.judge_time > inner.time_pointer - inner.range_of_current_note && note.judge_time < inner.time_pointer + inner.range_of_current_note {
-							if ui.button(&note.note_id).is_clicked() {
-								inner.link_id_temp = Some(note.note_id.clone());
-							};
+					for note in chart.notes.values() {
+						if note.judge_time > inner.time_pointer - inner.range_of_current_note && note.judge_time < inner.time_pointer + inner.range_of_current_note && ui.button(&note.note_id).is_clicked() {
+							inner.link_id_temp = Some(note.note_id.clone());
 						}
 					}
 				}else {
-					for (_, note) in &mut chart.notes {
+					for note in chart.notes.values_mut() {
 						if note.judge_time > inner.time_pointer - inner.range_of_current_note && note.judge_time < inner.time_pointer + inner.range_of_current_note {
 							ui.collapsing(format!("Note: {}", note.note_id), |ui, _| {
 								if let Some(id) = &note.linked_shape {
@@ -2202,10 +2453,8 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 									if ui.button("clear").is_clicked() {
 										note.linked_shape = None;
 									}
-								}else {
-									if ui.button("link").is_clicked() {
-										inner.is_linking_note = Some(note.note_id.clone())
-									}
+								}else if ui.button("link").is_clicked() {
+									inner.is_linking_note = Some(note.note_id.clone())
 								}
 							});
 						}
@@ -2249,6 +2498,44 @@ fn linker(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: 
 	})
 }
 
+macro_rules! switch_left_right {
+	($type_to_get: tt, $to_animation: tt, $chart: ident, $inner: ident, $left: ident, $right: ident, $msg: ident, $ui: ident) => {
+		let mut left_get = $chart.$type_to_get.remove($left);
+		let mut right_get = $chart.$type_to_get.remove($right);
+		if let (Some(left), Some(right)) = (&mut left_get, &mut right_get) {
+			switch_animation(&mut left.animation, &mut right.animation, &$inner.switcher.current_attributes);
+			let mut delta_left = match caculate_delta(&left.$to_animation, &right.$to_animation) {
+				Ok(t) => t,
+				Err(e) => {
+					$msg.message(format!("{}", e), $ui);
+					return;
+				}
+			};
+			delta_left.retain(|key, _| {
+				$inner.switcher.current_attributes.contains(key)
+			});
+			let mut delta_right = match caculate_delta(&right.$to_animation, &left.$to_animation) {
+				Ok(t) => t,
+				Err(e) => {
+					$msg.message(format!("{}", e), $ui);
+					return;
+				}
+			};
+			delta_right.retain(|key, _| {
+				$inner.switcher.current_attributes.contains(key)
+			});
+			let _ = apply_delta(left, &delta_left);
+			let _ = apply_delta(right, &delta_right);
+		}
+		if let Some(left_get) = &left_get {
+			$chart.$type_to_get.insert($left.to_string(), left_get.clone());
+		}
+		if let Some(right_get) = &left_get {
+			$chart.$type_to_get.insert($right.to_string(), right_get.clone());
+		}
+	}
+}
+
 fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, core: &mut ShapoistCore, position: Vec2) -> InnerResponse<()> {
 	ui.show(&mut Card::new("macro")
 		.set_rounding(Vec2::same(16.0))
@@ -2257,8 +2544,6 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 		.set_height(320.0)
 		.set_width(480.0)
 		.set_resizable(true)
-		.set_stroke_width(2.0)
-		.set_stroke_color(1.0)
 		.set_position(position)
 		.set_scrollable([true; 2]), 
 	|ui, _| {
@@ -2310,21 +2595,21 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 						if !inner.is_adsorption {
 							let mut sec = input.as_seconds_f32();
 							if ui.button("-").is_clicked() {
-								sec = sec - 0.1
+								sec -= 0.1
 							}
 							ui.add(Slider::new(0.01..=sustain_time.as_seconds_f32(), &mut sec, text).step(0.01).suffix("s"));
 							if ui.button("+").is_clicked() {
-								sec = sec + 0.1
+								sec += 0.1
 							}
 							*input = Duration::seconds_f32(sec);
 						}else {
 							let mut sustain_beats = (input.as_seconds_f32() * bps).floor() as usize;
 							if ui.button("-").is_clicked() {
-								sustain_beats = sustain_beats.checked_sub(1).unwrap_or(0);
+								sustain_beats = sustain_beats.saturating_sub(1);
 							}
 							ui.add(Slider::new(0..=beats.ceil() as usize, &mut sustain_beats, text).step(1.0).suffix(format!("*{} beat", beat_quator)));
 							if ui.button("+").is_clicked() {
-								sustain_beats = sustain_beats + 1;
+								sustain_beats += 1;
 							}
 							*input = Duration::seconds_f32(sustain_beats as f32 / bps);
 						}
@@ -2342,12 +2627,8 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 					let mut id_to_delete = vec!();
 					for (id, shape)in &mut chart.shapes {
 						let id_inner: Vec<&str> = id.split("generated shape").collect();
-						if id_inner.len() == 2 {
-							if id_inner[0] == "" {
-								if shape.start_time >= inner.time_pointer && shape.start_time <= inner.time_pointer + inner.note_generator.time_range {
-									id_to_delete.push(id.clone());
-								}
-							}
+						if id_inner.len() == 2 && id_inner[0].is_empty() && shape.start_time >= inner.time_pointer && shape.start_time <= inner.time_pointer + inner.note_generator.time_range {
+							id_to_delete.push(id.clone());
 						}
 					}
 					for id in id_to_delete {
@@ -2356,12 +2637,14 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 				};
 
 				if ui.button("clear").is_clicked() {
+					inner.is_something_changed = true;
 					clear(inner, chart);
 					msg.message("cleard successfully", ui);
 				}
 
 				if ui.button("generate").is_clicked() {
-					clear(&inner, chart);
+					inner.is_something_changed = true;
+					clear(inner, chart);
 					let offset = inner.paste_offset;
 					let time_pointer = inner.time_pointer;
 					let get_shape = |inner: &Vec<String>, chart: &mut Chart| -> Vec<shapoist_core::system::core_structs::Shape> { 
@@ -2370,7 +2653,7 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 							if let Some(shape_inner) = chart.shapes.get(id) {
 								let mut output = shape_inner.clone();
 								output.start_time = output.start_time - time_pointer + offset;
-								for (_, animation) in &mut output.animation {
+								for animation in output.animation.values_mut() {
 									animation.start_time = animation.start_time - time_pointer + offset;
 								}
 								output_shapes.push(output);
@@ -2381,9 +2664,9 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 					let process_shape = |input: &Vec<shapoist_core::system::core_structs::Shape>, note_id: &String, time: Duration| -> Vec<shapoist_core::system::core_structs::Shape> {
 						let mut output = input.clone();
 						for (i, shape) in output.iter_mut().enumerate() {
-							shape.start_time = shape.start_time + time;
-							for (_, animation) in &mut shape.animation {
-								animation.start_time = animation.start_time + time;
+							shape.start_time += time;
+							for animation in shape.animation.values_mut() {
+								animation.start_time += time;
 							}
 							shape.id = format!("generated shape {} {}", note_id, i);
 							shape.linked_note_id = Some(vec!(format!("{}", note_id)));
@@ -2430,6 +2713,178 @@ fn macro_window(inner: &mut EditRouter, ui: &mut Ui, msg: &mut MessageProvider, 
 					msg.message("generated successfully", ui);
 				}
 			}	
+		});
+		ui.collapsing("temporary group", |ui, _| {
+			ui.label("a temporary group that will sync animation to each child element");
+			ui.label("only support judge_field and shape");
+			ui.label("offset is same as animation editor's");
+			let selects = match core.current_selects() {
+				Ok(t) => t,
+				Err(e) => {
+					msg.message(format!("{}", e), ui);
+					return;
+				}	
+			};
+			let mut father_id_to_remove = vec!();
+			let mut father_id_to_insert = None;
+			for (father_id, child_ids) in &mut inner.grouper.group {
+				ui.collapsing(format!("{:?}", father_id), |ui, _| {
+					let mut child_id_to_remove = vec!();
+					for (child_id, offset, attribute) in child_ids.iter_mut() {
+						ui.collapsing(format!("{:?}", child_id), |ui, _| {
+							ui.label(format!("current offset: {}", offset));
+							if ui.button("change to current offset").is_clicked() {
+								*offset = inner.value_offset;
+							}
+							ui.label(format!("current attribute: {}", attribute.replace("----", " ").replace("Shape ", "").replace("style ", "").replace("JudgeFieldInner ", "").trim()));
+							if ui.button("change to current attribute").is_clicked() {
+								attribute.clone_from(&inner.current_animation_attribute);
+							}
+							if ui.button("remove").is_clicked() {
+								child_id_to_remove.push(child_id.clone());
+							}
+						});
+					}
+					child_ids.retain(|(id, _, _)| {
+						!child_id_to_remove.contains(id)
+					});
+					if ui.button("add current select to child").is_clicked() {
+						father_id_to_insert = Some(father_id.clone());
+					}
+					if ui.button("delete").is_clicked() {
+						father_id_to_remove.push(father_id.clone());
+					}
+				});
+			}
+			for id in father_id_to_remove {
+				inner.grouper.group.remove(&id);
+			}
+			if let Some(father_id) = father_id_to_insert {
+				let mut childs = vec!();
+				for select in &selects {
+					match select {
+						Select::JudgeField(_) | Select::Shape(_) => childs.push((select.clone(), inner.value_offset, inner.current_animation_attribute.clone())),
+						_ => continue
+					}
+				}
+				inner.grouper.group.insert(father_id.clone(), childs);
+			}
+			if ui.button("add current select to father").is_clicked() {
+				for select in &selects {
+					match select {
+						Select::JudgeField(_) | Select::Shape(_) => inner.grouper.group.insert(select.clone(), vec!()),
+						_ => continue
+					};
+				}
+			}
+			if ui.button("sync now").is_clicked() {
+				inner.is_something_changed = true;
+				inner.grouper.need_sync = true;
+			}
+			ui.label("value_offset");
+			ui.horizental(|ui| {
+				if ui.button("-").is_clicked() {
+					inner.value_offset -= 10_f32.powf(inner.round as f32);
+				}
+				ui.add(Slider::new(-500.0..=500.0, &mut inner.value_offset, "").step(0.01));
+				if ui.button("+").is_clicked() {
+					inner.value_offset += 10_f32.powf(inner.round as f32);
+				}
+				if ui.button("round").is_clicked() {
+					inner.value_offset = (inner.value_offset / 10_f32.powf(inner.round as f32)).round() * 10_f32.powf(inner.round as f32);
+				}
+				inner.value_offset = inner.value_offset.clamp(-500.0, 500.0);
+			});
+			if ui.button("reset offset").is_clicked() {
+				inner.value_offset = 0.0;
+			}
+		});
+		ui.collapsing("switch attributes", |ui, _| {
+			ui.label("switch two object as long as they're in the same type");
+			ui.label("switch operation includes animation");
+			ui.collapsing("current attributes", |ui, _| {
+				ui.label("click attribute to delete it");
+				let mut id_to_delete = None;
+				for attribute in &inner.switcher.current_attributes {
+					if ui.button(attribute.replace("----", " ").replace("Shape ", "").replace("Note ", "").replace("style ", "").replace("JudgeFieldInner ", "").trim().to_string()).is_clicked() {
+						id_to_delete = Some(attribute.clone());
+					}
+				}
+				if let Some(id) = id_to_delete {
+					inner.switcher.current_attributes.remove(&id);
+				}
+				if ui.button("add current attribute").is_clicked() && !inner.current_animation_attribute.is_empty() {
+					inner.switcher.current_attributes.insert(inner.current_animation_attribute.clone());
+				}
+			});
+			ui.collapsing("current select", |ui, _| {
+				ui.label("click id to delete it");
+				let mut current_selects = 0;
+				let mut id_to_delete = None;
+				for i in 0..2 {
+					if let Some(select) = &inner.switcher.to_switch[i] {
+						if ui.button(format!("{:?}", select)).is_clicked() {
+							id_to_delete = Some(i);
+						}
+						current_selects += 1;
+					}
+				}
+				if let Some(i) = id_to_delete {
+					inner.switcher.to_switch[i] = None;
+				}
+				if current_selects < 2 {
+					if let Some(current_animation_editing) = &inner.current_animation_editing {
+						ui.label(format!("current editing: {:?}", current_animation_editing));
+					}
+					if ui.button("add current editing").is_clicked() {
+						if let Some(current_animation_editing) = &inner.current_animation_editing {
+							inner.switcher.to_switch[current_selects] = Some(current_animation_editing.clone());
+						}
+					}
+				}
+			});
+			if ui.button("switch").is_clicked() {
+				inner.is_something_changed = true;
+				fn switch_animation(left: &mut HashMap<String, Animation>, right: &mut HashMap<String, Animation>, attributes: &HashSet<String>) {
+					let mut middle_left = HashMap::new();
+					for attribute in attributes {
+						if let Some(animation) = left.get(attribute) {
+							middle_left.insert(attribute.clone(), animation.clone());
+						}
+					}
+					let mut middle_right = HashMap::new();
+					for attribute in attributes {
+						if let Some(animation) = right.get(attribute) {
+							middle_right.insert(attribute.clone(), animation.clone());
+						}
+					}
+					for (attribute_right, animation_right) in middle_right {
+						left.insert(attribute_right, animation_right);
+					}
+					for (attribute_left, animation_left) in middle_left {
+						right.insert(attribute_left, animation_left);
+					}
+				}
+				if let Some((chart, _)) = &mut core.current_chart {
+					if let (Some(left), Some(right)) = (&inner.switcher.to_switch[0] ,&inner.switcher.to_switch[1]) {
+						match (left, right)  {
+							(Select::Shape(left), Select::Shape(right)) => {
+								switch_left_right!(shapes, shape, chart, inner, left, right, msg, ui);
+							},
+							(Select::JudgeField(left), Select::JudgeField(right)) => {
+								switch_left_right!(judge_fields, inner, chart, inner, left, right, msg, ui);
+							},
+							_ => {
+								msg.message("Error: not the same type or unsupported", ui);
+								return;
+							},
+						}
+						msg.message("switched successfully", ui);
+					}else {
+						msg.message("Error: less than 2 to switch", ui);
+					}
+				}
+			}
 		});
 		let mut info = MacroInner::from_router(inner);
 		for (id, (code, macro_use)) in &mut inner.macro_map {

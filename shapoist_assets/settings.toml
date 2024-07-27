@@ -3,6 +3,8 @@ need_check_chart = true
 need_check_script = true
 thread_handels = 4
 command_history = 30
+music_volume = 1.0
+click_sound_volume = 1.0
 
 [enabled_script]
 
@@ -11,4 +13,4 @@ secs = 43200
 nanos = 0
 
 [offset]
-time = -601.6502075195313
+time = -656.35595703125

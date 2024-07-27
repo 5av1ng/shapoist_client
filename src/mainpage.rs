@@ -61,7 +61,6 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 		});
 	});
 	ui.show(&mut Card::new("router_page")
-	.set_color(ui.style().background_color.brighter(0.05))
 	.set_position(Vec2::new(96.0, 0.0) + Vec2::same(ui.style().space))
 	.set_rounding(Vec2::same(10.0)),
 	|ui, _| {
@@ -91,17 +90,17 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 						};
 					});
 				});
-				if let Some(t) = &mut ui.show(&mut Card::new("content").set_color([0,0,0,0]).set_scrollable([true; 2]), |ui, _| -> Option<ChartInfo> {
+				if let Some(Some(chart)) = &mut ui.show(&mut Card::new("content").set_color([0,0,0,0]).set_scrollable([true; 2]), |ui, _| -> Option<ChartInfo> {
 					let mut chart_to_change = None;
 					for chart in &mut core.chart_list {
-						let name = chart.song_name.replace("\n", "");
+						let name = chart.song_name.replace('\n', "");
 						let width = ui.window_area().width() - 48.0;
 						let height = 90.0;
 						if ui.put(Button::new("").icon(Vec2::new(width, height), |painter| {
 							let text_area = painter.text_area(name.clone());
 							painter.set_position(Vec2::new(16.0, height - text_area.height() - 12.0));
 							if text_area.width() > width - 16.0 {
-								painter.text(utf8_slice::till(&name, ((utf8_slice::len(&name) as f32 * text_area.width() / (width - 16.0)) as usize).checked_sub(3).unwrap_or(0)).to_owned() + "...");
+								painter.text(utf8_slice::till(&name, ((utf8_slice::len(&name) as f32 * text_area.width() / (width - 16.0)) as usize).saturating_sub(3)).to_owned() + "...");
 							}else {
 								painter.text(name.clone());
 							}
@@ -111,12 +110,10 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 					}
 					chart_to_change
 				}).return_value {
-					if let Some(t) = t {
-						if let Err(e) = core.read_chart(t) {
-							msg.message(format!("{}", e), ui);
-						}else {
-							*router = Router::Detail { is_auto: false };
-						}
+					if let Err(e) = core.read_chart(chart) {
+						msg.message(format!("{}", e), ui);
+					}else {
+						*router = Router::Detail { is_auto: false };
 					}
 				};
 			},
@@ -172,13 +169,13 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 						}
 					}
 					if ui.button("+500ms").is_clicked() {
-						core.settings.offset = core.settings.offset + Duration::milliseconds(500);
+						core.settings.offset += Duration::milliseconds(500);
 						if let Err(e) = core.settings_are_changed() {
 							msg.message(format!("{}", e), ui);
 						}
 					}
 					if ui.button("-500ms").is_clicked() {
-						core.settings.offset = core.settings.offset - Duration::milliseconds(500);
+						core.settings.offset -= Duration::milliseconds(500);
 						if let Err(e) = core.settings_are_changed() {
 							msg.message(format!("{}", e), ui);
 						}
@@ -317,9 +314,9 @@ pub fn mainpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 	});
 }
 
-impl Into<Router> for MainRouter {
-	fn into(self) -> Router {
-		Router::Main(self)
+impl From<MainRouter> for Router {
+	fn from(val: MainRouter) -> Self {
+		Router::Main(val)
 	}
 }
 

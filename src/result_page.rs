@@ -20,14 +20,14 @@ pub fn result_page(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, 
 			msg.message("no chart loaded", ui);
 			return;
 		};
-		let mut judge_info = vec!(0,0,0,0,0);
+		let mut judge_info = [0,0,0,0,0];
 		for judge in &play_info.judge_vec {
 			match judge {
-				Judge::Immaculate(_) => judge_info[0] = judge_info[0] + 1,
-				Judge::Extra => judge_info[1] = judge_info[1] + 1,
-				Judge::Normal => judge_info[2] = judge_info[2] + 1,
-				Judge::Fade => judge_info[3] = judge_info[3] + 1,
-				Judge::Miss => judge_info[4] = judge_info[4] + 1,
+				Judge::Immaculate(_) => judge_info[0] += 1,
+				Judge::Extra => judge_info[1] += 1,
+				Judge::Normal => judge_info[2] += 1,
+				Judge::Fade => judge_info[3] += 1,
+				Judge::Miss => judge_info[4] += 1,
 			}
 		}
 		ui.label("Score");

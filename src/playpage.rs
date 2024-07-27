@@ -131,12 +131,10 @@ pub fn playpage(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, cor
 	if let Err(e) = core.judge(judge_event) {
 		msg.message(format!("{}", e), ui);
 	};
-	if res.is_multi_clicked(2) {
-		if input.cursor_position().unwrap_or(Vec2::INF).is_inside(Area::new(canvas_position, canvas_position + Vec2::same(32.0))) {
-			core.clear_play();
-			ui.delete_texture(path);
-			*router = Router::Main(MainRouter::default());
-		}
+	if res.is_multi_clicked(2) && input.cursor_position().unwrap_or(Vec2::INF).is_inside(Area::new(canvas_position, canvas_position + Vec2::same(32.0))) {
+		core.clear_play();
+		ui.delete_texture(path);
+		*router = Router::Main(MainRouter::default());
 	}
 
 }

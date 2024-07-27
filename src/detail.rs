@@ -78,10 +78,10 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 					},
 					Diffculty::Other(inner) => ui.label(inner),
 				};
-				if info.bpm.linkers.len() == 0 {
+				if info.bpm.linkers.is_empty() {
 					ui.label(format!("Bpm:{}", info.bpm.start_bpm));
 				}else {
-					ui.button(format!("Bpm Detail"));
+					ui.button("Bpm Detail".to_string());
 				}
 			});
 			ui.card("play info", Vec2::new(ui.window_area().width() - 300.0 - 16.0, height - 32.0), |ui,_ | {
@@ -100,13 +100,11 @@ pub fn detail(router: &mut Router, ui: &mut Ui, msg: &mut MessageProvider, core:
 									ui.delete_texture(path);
 									*router = Router::PlayPage;
 								};
+							}else if let Err(e) = core.play(PlayMode::Normal) {
+								msg.message(format!("{}", e), ui);
 							}else {
-								if let Err(e) = core.play(PlayMode::Normal) {
-									msg.message(format!("{}", e), ui);
-								}else {
-									ui.delete_texture(path);
-									*router = Router::PlayPage;
-								};
+								ui.delete_texture(path);
+								*router = Router::PlayPage;
 							}
 						}
 					};
